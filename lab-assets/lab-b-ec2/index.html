@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AWS Club — Lab B</title>
+  <!-- Placeholders __PRIVATE_IP__ and __HOSTNAME__ are replaced by nginx sub_filter at serve time. -->
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(145deg, #232f3e 0%, #16191f 55%, #1a2836 100%);
+      color: #f2f3f3;
+      padding: 2rem 1rem;
+    }
+    .card {
+      max-width: 36rem;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 153, 0, 0.35);
+      border-radius: 12px;
+      padding: 2rem 2.25rem;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+    .badge {
+      display: inline-block;
+      background: #ff9900;
+      color: #232f3e;
+      padding: 0.3rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      margin: 0 0 0.75rem;
+      font-size: 1.85rem;
+      line-height: 1.2;
+      color: #fff;
+    }
+    .lead {
+      font-size: 1.05rem;
+      line-height: 1.55;
+      color: #d5d9dd;
+      margin: 0 0 1.5rem;
+    }
+    .ip-box {
+      background: rgba(82, 127, 255, 0.15);
+      border: 1px solid rgba(82, 127, 255, 0.45);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .ip-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #8ab4ff;
+      margin-bottom: 0.35rem;
+    }
+    .ip-value {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .footer {
+      font-size: 0.875rem;
+      color: #9aa3ad;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .footer strong { color: #ff9900; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <p class="badge">Lab B & C — Amazon EC2</p>
+    <h1>Welcome to the AWS Club!</h1>
+    <p class="lead">
+      You launched your first EC2 instance, connected over SSH, and deployed a web server.
+      If you can read this page, your hands-on lab worked — nice work!
+    </p>
+    <div class="ip-box">
+      <div class="ip-label">Instance private IP (VPC)</div>
+      <div class="ip-value">__PRIVATE_IP__</div>
+    </div>
+    <div class="ip-box">
+      <div class="ip-label">Instance hostname</div>
+      <div class="ip-value">__HOSTNAME__</div>
+    </div>
+    <p class="footer">
+      Served by <strong>nginx</strong> on Amazon Linux.
+      In <strong>Lab C</strong> we put two instances like this behind an <strong>Application Load Balancer</strong> —
+      refresh the ALB URL and watch this hostname change.
+    </p>
+  </main>
+</body>
+</html>

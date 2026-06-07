@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS Club — Step-by-Step Lab Guide</title>
+  <style>
+:root {
+  --aws-orange: #FF9900;
+  --aws-dark: #232F3E;
+  --aws-blue: #527FFF;
+  --aws-green: #1B8700;
+  --aws-red: #D13212;
+  --aws-bg: #F2F3F3;
+  --aws-body: #16191F;
+  --text-muted: #5f6b7a;
+  --border: #d5dbdb;
+  --code-bg: #1a2533;
+  --code-fg: #e8eaed;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--aws-bg);
+  color: var(--aws-body);
+  line-height: 1.55;
+}
+header.page-header {
+  background: linear-gradient(135deg, var(--aws-dark) 0%, #1a2836 100%);
+  color: #fff;
+  padding: 2rem 2rem 1.75rem;
+  border-bottom: 4px solid var(--aws-orange);
+}
+header.page-header h1 {
+  margin: 0 0 .5rem;
+  font-size: 1.85rem;
+  font-weight: 700;
+}
+header.page-header .meta {
+  color: #b0b8c4;
+  font-size: .95rem;
+}
+header.page-header .meta strong { color: var(--aws-orange); }
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 0;
+  min-height: calc(100vh - 120px);
+}
+nav.toc {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100vh;
+  overflow-y: auto;
+  background: var(--aws-dark);
+  padding: 1.25rem 1rem;
+  border-right: 2px solid var(--aws-orange);
+}
+nav.toc h2 {
+  margin: 0 0 .75rem;
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--aws-orange);
+}
+nav.toc a {
+  display: block;
+  color: #b0b8c4;
+  text-decoration: none;
+  font-size: .82rem;
+  padding: .35rem .5rem;
+  border-radius: 4px;
+  border-left: 2px solid transparent;
+  margin-bottom: .15rem;
+}
+nav.toc a:hover { background: rgba(255,153,0,.12); color: #fff; }
+nav.toc a.lab-0 { border-left-color: #527FFF; }
+nav.toc a.lab-a { border-left-color: #1B8700; }
+nav.toc a.lab-b { border-left-color: #FF9900; }
+nav.toc a.lab-c { border-left-color: #D13212; }
+nav.toc a.lab-d { border-left-color: #7B68EE; }
+main.content {
+  padding: 2rem 2.5rem 3rem;
+  background: #fff;
+  min-width: 0;
+}
+section.block { margin-bottom: 2rem; }
+h2.section-title {
+  font-size: 1.35rem;
+  margin: 2rem 0 1rem;
+  padding: .65rem 1rem;
+  border-radius: 6px;
+  color: #fff;
+  background: var(--aws-dark);
+  border-left: 5px solid var(--aws-orange);
+}
+h2.section-title.lab-0 { border-left-color: #527FFF; }
+h2.section-title.lab-a { border-left-color: #1B8700; }
+h2.section-title.lab-b { border-left-color: #FF9900; }
+h2.section-title.lab-c { border-left-color: #D13212; }
+h2.section-title.lab-d { border-left-color: #7B68EE; }
+h2.section-title.teardown { border-left-color: var(--aws-red); background: #3d1f1f; }
+h3.step-title {
+  font-size: 1.05rem;
+  margin: 1.5rem 0 .65rem;
+  color: var(--aws-dark);
+  padding-bottom: .35rem;
+  border-bottom: 2px solid var(--aws-orange);
+}
+h4 { font-size: .95rem; margin: 1rem 0 .5rem; color: #37475a; }
+p { margin: .5rem 0 .75rem; }
+p.goal {
+  background: #eef3ff;
+  border-left: 4px solid var(--aws-blue);
+  padding: .75rem 1rem;
+  border-radius: 0 6px 6px 0;
+  margin: 1rem 0;
+}
+ul, ol { margin: .5rem 0 1rem; padding-left: 1.4rem; }
+li { margin-bottom: .35rem; }
+li::marker { color: var(--aws-orange); }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: .9rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+thead { background: var(--aws-dark); color: #fff; }
+th, td {
+  border: 1px solid var(--border);
+  padding: .55rem .75rem;
+  text-align: left;
+}
+tbody tr:nth-child(even) { background: #f8f9fa; }
+tbody tr:hover { background: #fff8ee; }
+pre {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  padding: 1rem 1.15rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: .82rem;
+  line-height: 1.45;
+  margin: .75rem 0 1rem;
+  border-left: 4px solid var(--aws-orange);
+}
+code {
+  font-family: ui-monospace, Consolas, 'Cascadia Code', monospace;
+  font-size: .88em;
+}
+p code, li code, td code {
+  background: #eef0f2;
+  color: #c45c00;
+  padding: .12rem .35rem;
+  border-radius: 3px;
+}
+.checkpoint {
+  list-style: none;
+  padding-left: 0;
+  margin: 1rem 0;
+}
+.checkpoint li {
+  padding: .45rem .75rem .45rem 2rem;
+  background: #f0faf0;
+  border: 1px solid #b8e0b8;
+  border-radius: 6px;
+  margin-bottom: .4rem;
+  position: relative;
+}
+.checkpoint li::before {
+  content: '☐';
+  position: absolute;
+  left: .65rem;
+  color: var(--aws-green);
+  font-weight: bold;
+}
+blockquote, .callout {
+  background: #fff8ee;
+  border-left: 4px solid var(--aws-orange);
+  padding: .75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 6px 6px 0;
+  color: #5c4a32;
+}
+blockquote strong, .callout strong { color: #b86e00; }
+hr.divider {
+  border: none;
+  border-top: 2px dashed var(--border);
+  margin: 2rem 0;
+}
+.footer-note {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: .85rem;
+  padding: 1.5rem;
+  border-top: 1px solid var(--border);
+  background: var(--aws-bg);
+}
+@media (max-width: 800px) {
+  .layout { grid-template-columns: 1fr; }
+  nav.toc { position: static; max-height: none; }
+  main.content { padding: 1.25rem; }
+}
+</style>
+</head>
+<body>
+  <header class="page-header">
+    <h1>AWS Club — Step-by-Step Lab Guide</h1>
+    <div class="meta"><strong>Workshop duration:</strong> 4 hours<br><strong>Region used in examples:</strong> <code>eu-central-1</code> (Frankfurt) — change if your instructor uses another region.<br><strong>Lab assets:</strong> <code>lab-assets/lab-a-s3/index.html</code>, <code>lab-assets/lab-0-verify-identity/iam-lab-policy.json</code></div>
+  </header>
+  <div class="layout">
+    <nav class="toc"><h2>Contents</h2>
+<a href="#lab-0-verify-identity-10-min" class="lab-0">Lab 0 — Verify identity (10 min)</a>
+<a href="#part-a-aws-console" class="">Part A — AWS Console</a>
+<a href="#part-b-aws-cli-partner-b" class="">Part B — AWS CLI (Partner B)</a>
+<a href="#lab-a-amazon-s3-25-min" class="lab-a">Lab A — Amazon S3 (25 min)</a>
+<a href="#step-a1-create-a-bucket-console-partner-a" class="">Step A1 — Create a bucket (Console — Pa…</a>
+<a href="#step-a2-upload-index-html-console" class="">Step A2 — Upload `index.html` (Console)</a>
+<a href="#step-a3-upload-via-cli-partner-b" class="">Step A3 — Upload via CLI (Partner B)</a>
+<a href="#step-a4-download-back-cli" class="">Step A4 — Download back (CLI)</a>
+<a href="#step-a5-enable-versioning-console" class="">Step A5 — Enable versioning (Console)</a>
+<a href="#step-a6-takeaway-artifact" class="">Step A6 — Takeaway artifact</a>
+<a href="#lab-b-vpc-ec2-nginx-40-min" class="lab-b">Lab B — VPC + EC2 + nginx (40 min)</a>
+<a href="#step-b1-create-vpc-console" class="">Step B1 — Create VPC (Console)</a>
+<a href="#step-b2-internet-gateway-console" class="">Step B2 — Internet gateway (Console)</a>
+<a href="#step-b3-public-subnet-console" class="">Step B3 — Public subnet (Console)</a>
+<a href="#step-b4-public-route-table-console" class="">Step B4 — Public route table (Console)</a>
+<a href="#step-b5-create-a-key-pair-console" class="">Step B5 — Create a key pair (Console)</a>
+<a href="#step-b6-create-security-group-console" class="">Step B6 — Create security group (Console)</a>
+<a href="#step-b7-launch-ec2-instance-console" class="">Step B7 — Launch EC2 instance (Console)</a>
+<a href="#step-b8-connect-with-ssh-partner-b" class="">Step B8 — Connect with SSH (Partner B)</a>
+<a href="#step-b9-install-nginx-and-enable-dynamic-placeholders-on-ec2" class="">Step B9 — Install nginx and enable dyna…</a>
+<a href="#step-b10-add-index-html-to-the-web-server" class="">Step B10 — Add `index.html` to the web …</a>
+<a href="#step-b11-test-in-browser-partner-a" class="">Step B11 — Test in browser (Partner A)</a>
+<a href="#step-b12-stretch-ec2-via-cli-partner-b" class="">Step B12 — ★ Stretch: EC2 via CLI (Part…</a>
+<a href="#step-b13-tag-your-instance-console" class="">Step B13 — Tag your instance (Console)</a>
+<a href="#lab-c-second-ec2-application-load-balancer-35-min" class="lab-c">Lab C — Second EC2 + Application Load B…</a>
+<a href="#step-c1-second-public-subnet-console" class="">Step C1 — Second public subnet (Console)</a>
+<a href="#step-c2-launch-second-ec2-console" class="">Step C2 — Launch second EC2 (Console)</a>
+<a href="#step-c3-configure-web2-ssh" class="">Step C3 — Configure web2 (SSH)</a>
+<a href="#step-c4-create-target-group-console" class="">Step C4 — Create target group (Console)</a>
+<a href="#step-c5-alb-security-group-console" class="">Step C5 — ALB security group (Console)</a>
+<a href="#step-c6-create-application-load-balancer-console" class="">Step C6 — Create Application Load Balan…</a>
+<a href="#step-c7-test-load-balancing" class="">Step C7 — Test load balancing</a>
+<a href="#lab-d-rds-sqs-observe-light-participation" class="lab-d">Lab D — RDS &amp; SQS (observe / light part…</a>
+<a href="#tear-down-mandatory-15-min-before-end" class="teardown">Tear-down (mandatory — 15 min before end)</a>
+</nav>
+    <main class="content">
+      <p><strong>Workshop duration:</strong> 4 hours  </p>
+<p><strong>Region used in examples:</strong> <code>eu-central-1</code> (Frankfurt) — change if your instructor uses another region.  </p>
+<p><strong>Lab assets:</strong> <code>lab-assets/lab-a-s3/index.html</code>, <code>lab-assets/lab-0-verify-identity/iam-lab-policy.json</code></p>
+<hr class="divider">
+<section class="block" id="before-you-start">
+</section>
+<section class="block"><h2 class="section-title ">Before you start</h2>
+<h3 class="step-title" id="what-you-need">What you need</h3>
+<table><thead><tr><th>Item</th><th>Details</th></tr></thead><tbody><tr><td>Laptop</td><td>Windows, macOS, or Linux</td></tr><tr><td>Browser</td><td>Chrome or Edge recommended</td></tr><tr><td>AWS access</td><td>Lab IAM user credentials (Access Key ID + Secret) <strong>or</strong> instructor-provided account</td></tr><tr><td>Files</td><td>Download <code>index.html</code> from <code>materials/lab-assets/lab-a-s3/</code></td></tr><tr><td>Optional</td><td>AWS CLI v2 installed</td></tr></tbody></table>
+<h3 class="step-title" id="naming-convention">Naming convention</h3>
+<ul>
+<li>S3 bucket: <code>aws-club-&lt;your-initials&gt;-&lt;YYYYMMDD&gt;</code> (lowercase, no spaces)</li>
+<li>Example: <code>aws-club-am-20260602</code></li>
+</ul>
+<h3 class="step-title" id="pair-roles">Pair roles</h3>
+<table><thead><tr><th>Role</th><th>Responsibility</th></tr></thead><tbody><tr><td><strong>Partner A</strong></td><td>AWS Console navigation</td></tr><tr><td><strong>Partner B</strong></td><td>Terminal / AWS CLI</td></tr></tbody></table>
+<p>Swap roles in Lab B.</p>
+<hr class="divider">
+<section class="block" id="lab-0-verify-identity-10-min">
+</section>
+<section class="block"><h2 class="section-title lab-0">Lab 0 — Verify identity (10 min)</h2>
+<p class="goal"><strong>Goal:</strong> Confirm you are signed in as the lab IAM user and (optional) CLI works.</p>
+<h3 class="step-title" id="part-a-aws-console">Part A — AWS Console</h3>
+<ol>
+<li>Open https://console.aws.amazon.com/</li>
+<li>Sign in with your <strong>lab IAM user</strong> (not root).</li>
+<li>Top-right: note the <strong>Region</strong> dropdown → select <strong>Europe (Frankfurt) eu-central-1</strong> (or instructor’s region).</li>
+<li>Search bar → type <strong>IAM</strong> → open <strong>IAM</strong>.</li>
+<li>Left menu → <strong>Users</strong> → click your username.</li>
+<li><strong>Record</strong> your username: <code>________________</code></li>
+</ol>
+<p><strong>Expected:</strong> You see your user summary without “root” in the account email.</p>
+<h3 class="step-title" id="part-b-aws-cli-partner-b">Part B — AWS CLI (Partner B)</h3>
+<p><strong>Install (if needed):</strong></p>
+<ul>
+<li>Windows: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html  </li>
+<li>Mac: <code>brew install awscli</code>  </li>
+<li>Linux: <code>curl &quot;https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip&quot; -o awscliv2.zip</code> (see AWS docs)</li>
+</ul>
+<p><strong>Configure:</strong></p>
+<pre><code>aws configure</code></pre>
+<table><thead><tr><th>Prompt</th><th>Enter</th></tr></thead><tbody><tr><td>AWS Access Key ID</td><td>(from instructor)</td></tr><tr><td>AWS Secret Access Key</td><td>(from instructor)</td></tr><tr><td>Default region name</td><td><code>eu-central-1</code></td></tr><tr><td>Default output format</td><td><code>json</code></td></tr></tbody></table>
+<p><strong>Verify:</strong></p>
+<pre><code>aws sts get-caller-identity</code></pre>
+<p><strong>Expected output (example):</strong></p>
+<pre><code>{
+    &quot;UserId&quot;: &quot;AIDAXXXXXXXXX&quot;,
+    &quot;Account&quot;: &quot;123456789012&quot;,
+    &quot;Arn&quot;: &quot;arn:aws:iam::123456789012:user/aws-club-student01&quot;
+}</code></pre>
+<p><strong>Troubleshooting:</strong></p>
+<table><thead><tr><th>Problem</th><th>Fix</th></tr></thead><tbody><tr><td><code>Unable to locate credentials</code></td><td>Run <code>aws configure</code> again</td></tr><tr><td><code>AccessDenied</code></td><td>Ask instructor to attach lab policy</td></tr><tr><td>Wrong region later</td><td><code>export AWS_DEFAULT_REGION=eu-central-1</code> (Mac/Linux) or set in configure</td></tr></tbody></table>
+<ul class="checkpoint">
+<li>** Console login works</li>
+<li>** <code>get-caller-identity</code> shows your lab user ARN</li>
+</ul>
+<hr class="divider">
+<section class="block" id="lab-a-amazon-s3-25-min">
+</section>
+<section class="block"><h2 class="section-title lab-a">Lab A — Amazon S3 (25 min)</h2>
+<p class="goal"><strong>Goal:</strong> Create a bucket, upload a file via Console and CLI, enable versioning.</p>
+<h3 class="step-title" id="step-a1-create-a-bucket-console-partner-a">Step A1 — Create a bucket (Console — Partner A)</h3>
+<ol>
+<li>Console search → <strong>S3</strong> → open <strong>S3</strong>.</li>
+<li>Click <strong>Create bucket</strong>.</li>
+<li><strong>Bucket name:</strong> <code>aws-club-&lt;initials&gt;-&lt;date&gt;</code> (must be globally unique).</li>
+<li><strong>AWS Region:</strong> <code>eu-central-1</code>.</li>
+<li><strong>Object Ownership:</strong> ACLs disabled (recommended) — leave default.</li>
+<li><strong>Block Public Access:</strong> leave <strong>all four checked</strong> (recommended for lab).</li>
+<li><strong>Bucket Versioning:</strong> Disable for now (enable in Step A5).</li>
+<li><strong>Encryption:</strong> SSE-S3 (default) is fine.</li>
+<li>Click <strong>Create bucket</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> Bucket appears in the list.</p>
+<p><strong>Troubleshooting:</strong></p>
+<table><thead><tr><th>Problem</th><th>Fix</th></tr></thead><tbody><tr><td><code>Bucket name already exists</code></td><td>Add more characters (middle name, random digits)</td></tr><tr><td><code>Access Denied</code></td><td>Instructor must allow <code>s3:CreateBucket</code> for your prefix</td></tr></tbody></table>
+<p><strong>Record bucket name:</strong> <code>________________</code></p>
+<hr class="divider">
+<h3 class="step-title" id="step-a2-upload-index-html-console">Step A2 — Upload <code>index.html</code> (Console)</h3>
+<ol>
+<li>Click your bucket name.</li>
+<li>Tab <strong>Objects</strong> → <strong>Upload</strong>.</li>
+<li><strong>Add files</strong> → select <code>index.html</code> from <code>lab-assets/lab-a-s3/</code>.</li>
+<li>Scroll down → <strong>Upload</strong>.</li>
+<li>Click the object <code>index.html</code> → under <strong>Object overview</strong>, copy the <strong>S3 URI</strong> (e.g. <code>s3://aws-club-am-20260602/index.html</code>).</li>
+</ol>
+<ul class="checkpoint">
+<li>** Object listed in bucket</li>
+</ul>
+<hr class="divider">
+<h3 class="step-title" id="step-a3-upload-via-cli-partner-b">Step A3 — Upload via CLI (Partner B)</h3>
+<p>Open terminal in the folder containing <code>index.html</code>:</p>
+<pre><code>aws s3 cp index.html s3://YOUR-BUCKET-NAME/index.html</code></pre>
+<p>Replace <code>YOUR-BUCKET-NAME</code> with your actual bucket.</p>
+<p><strong>List objects:</strong></p>
+<pre><code>aws s3 ls s3://YOUR-BUCKET-NAME/</code></pre>
+<p><strong>Expected:</strong></p>
+<pre><code>2026-06-02 14:30:00        612 index.html</code></pre>
+<p><strong>Optional — sync a folder:</strong></p>
+<pre><code>aws s3 sync ./lab-assets/lab-a-s3 s3://YOUR-BUCKET-NAME/demo/</code></pre>
+<hr class="divider">
+<h3 class="step-title" id="step-a4-download-back-cli">Step A4 — Download back (CLI)</h3>
+<pre><code>aws s3 cp s3://YOUR-BUCKET-NAME/index.html ./downloaded-index.html</code></pre>
+<p>Open <code>downloaded-index.html</code> locally — content should match.</p>
+<hr class="divider">
+<h3 class="step-title" id="step-a5-enable-versioning-console">Step A5 — Enable versioning (Console)</h3>
+<ol>
+<li>Bucket → tab <strong>Properties</strong>.</li>
+<li>Section <strong>Bucket Versioning</strong> → <strong>Edit</strong>.</li>
+<li>Select <strong>Enable</strong> → <strong>Save changes</strong>.</li>
+<li>Upload <code>index.html</code> again (overwrite).</li>
+<li>Object → <strong>Show versions</strong> — you should see two versions.</li>
+</ol>
+<p><strong>Discussion point:</strong> Versioning helps recovery from accidental delete/overwrite.</p>
+<hr class="divider">
+<h3 class="step-title" id="step-a6-takeaway-artifact">Step A6 — Takeaway artifact</h3>
+<ol>
+<li>Take a <strong>screenshot</strong> of the S3 objects list showing <code>index.html</code>.</li>
+<li>Paste into the club shared doc <strong>or</strong> save locally for portfolio.</li>
+</ol>
+<ul class="checkpoint">
+<li>** Bucket created</li>
+<li>** Upload via Console</li>
+<li>** Upload/list via CLI</li>
+<li>** Versioning enabled</li>
+</ul>
+<hr class="divider">
+<section class="block" id="lab-b-vpc-ec2-nginx-40-min">
+</section>
+<section class="block"><h2 class="section-title lab-b">Lab B — VPC + EC2 + nginx (40 min)</h2>
+<p class="goal"><strong>Goal:</strong> Create a VPC with a public subnet, launch <strong>one</strong> Amazon Linux instance, connect with SSH, and serve a welcome page that shows this machine&#x27;s <strong>private IP</strong> and <strong>hostname</strong>.</p>
+<p><strong>Assets:</strong></p>
+<table><thead><tr><th>File</th><th>Purpose</th></tr></thead><tbody><tr><td><code>lab-assets/lab-b-ec2/index.html</code></td><td>Welcome page (placeholders filled by nginx at serve time)</td></tr><tr><td><code>lab-assets/lab-b-ec2/nginx-lab-snippet.conf</code></td><td><code>sub_filter</code> lines → <code>/etc/nginx/default.d/aws-club-lab.conf</code></td></tr></tbody></table>
+<h3 class="step-title" id="step-b1-create-vpc-console">Step B1 — Create VPC (Console)</h3>
+<ol>
+<li>Console search → <strong>VPC</strong> → <strong>Your VPCs</strong> → <strong>Create VPC</strong>.</li>
+<li><strong>VPC settings:</strong> <strong>VPC only</strong> (not the wizard — we build each piece).</li>
+<li><strong>Name:</strong> <code>aws-club-&lt;initials&gt;-vpc</code></li>
+<li><strong>IPv4 CIDR:</strong> <code>10.0.0.0/16</code></li>
+<li><strong>Create VPC</strong>.</li>
+</ol>
+<p><strong>Record VPC ID:</strong> <code>vpc-________________</code></p>
+<hr class="divider">
+<h3 class="step-title" id="step-b2-internet-gateway-console">Step B2 — Internet gateway (Console)</h3>
+<ol>
+<li>VPC → <strong>Internet gateways</strong> → <strong>Create internet gateway</strong>.</li>
+<li><strong>Name:</strong> <code>aws-club-&lt;initials&gt;-igw</code></li>
+<li><strong>Create</strong>.</li>
+<li>Select the IGW → <strong>Actions</strong> → <strong>Attach to VPC</strong> → choose <code>aws-club-&lt;initials&gt;-vpc</code>.</li>
+</ol>
+<hr class="divider">
+<h3 class="step-title" id="step-b3-public-subnet-console">Step B3 — Public subnet (Console)</h3>
+<ol>
+<li>VPC → <strong>Subnets</strong> → <strong>Create subnet</strong>.</li>
+<li><strong>VPC:</strong> <code>aws-club-&lt;initials&gt;-vpc</code></li>
+<li><strong>Subnet name:</strong> <code>aws-club-&lt;initials&gt;-public</code></li>
+<li><strong>Availability Zone:</strong> pick one (e.g. <code>eu-central-1a</code>)</li>
+<li><strong>IPv4 CIDR:</strong> <code>10.0.1.0/24</code></li>
+<li><strong>Create subnet</strong>.</li>
+<li>Select the subnet → <strong>Actions</strong> → <strong>Edit subnet settings</strong> → enable <strong>Enable auto-assign public IPv4 address</strong> → <strong>Save</strong>.</li>
+</ol>
+<hr class="divider">
+<h3 class="step-title" id="step-b4-public-route-table-console">Step B4 — Public route table (Console)</h3>
+<ol>
+<li>VPC → <strong>Route tables</strong> → find the table associated with your VPC (not the main/default association yet).</li>
+<li>Select it → <strong>Subnet associations</strong> → <strong>Edit subnet associations</strong> → check <code>aws-club-&lt;initials&gt;-public</code> → <strong>Save</strong>.</li>
+<li><strong>Routes</strong> tab → <strong>Edit routes</strong> → <strong>Add route</strong>:</li>
+</ol>
+<p>   - Destination: <code>0.0.0.0/0</code></p>
+<p>   - Target: your Internet gateway</p>
+<ol>
+<li><strong>Save changes</strong>.</li>
+</ol>
+<hr class="divider">
+<h3 class="step-title" id="step-b5-create-a-key-pair-console">Step B5 — Create a key pair (Console)</h3>
+<ol>
+<li>Console search → <strong>EC2</strong> → <strong>Key pairs</strong> (under Network &amp; Security).</li>
+<li><strong>Create key pair</strong>.</li>
+<li><strong>Name:</strong> <code>aws-club-&lt;initials&gt;-key</code></li>
+<li><strong>Key pair type:</strong> RSA</li>
+<li><strong>Private key format:</strong> <code>.pem</code> (Mac/Linux) or <code>.ppk</code> if PuTTY-only on Windows</li>
+<li><strong>Create</strong> → file downloads automatically.</li>
+</ol>
+<p><strong>Secure the key:</strong></p>
+<p><strong>macOS / Linux:</strong></p>
+<pre><code>chmod 400 ~/Downloads/aws-club-xx-key.pem
+mv ~/Downloads/aws-club-xx-key.pem ~/.ssh/</code></pre>
+<p><strong>Windows (PowerShell):</strong></p>
+<pre><code>icacls &quot;$env:USERPROFILE\Downloads\aws-club-xx-key.pem&quot; /inheritance:r
+icacls &quot;$env:USERPROFILE\Downloads\aws-club-xx-key.pem&quot; /grant:r &quot;$env:USERNAME:R&quot;</code></pre>
+<p><strong>Never</strong> upload <code>.pem</code> to Git or Discord.</p>
+<hr class="divider">
+<h3 class="step-title" id="step-b6-create-security-group-console">Step B6 — Create security group (Console)</h3>
+<ol>
+<li>EC2 → <strong>Security Groups</strong> → <strong>Create security group</strong>.</li>
+<li><strong>Name:</strong> <code>aws-club-&lt;initials&gt;-sg</code></li>
+<li><strong>VPC:</strong> <code>aws-club-&lt;initials&gt;-vpc</code> (your VPC, not default)</li>
+<li><strong>Inbound rules:</strong></li>
+</ol>
+<table><thead><tr><th>Type</th><th>Port</th><th>Source</th><th>Description</th></tr></thead><tbody><tr><td>SSH</td><td>22</td><td><strong>My IP</strong></td><td>Admin access</td></tr><tr><td>HTTP</td><td>80</td><td>0.0.0.0/0</td><td>Lab web demo</td></tr></tbody></table>
+<ol>
+<li><strong>Outbound:</strong> leave default (All traffic → 0.0.0.0/0).</li>
+<li><strong>Create security group</strong>.</li>
+</ol>
+<p><strong>Record security group ID:</strong> <code>sg-________________</code></p>
+<hr class="divider">
+<h3 class="step-title" id="step-b7-launch-ec2-instance-console">Step B7 — Launch EC2 instance (Console)</h3>
+<ol>
+<li>EC2 → <strong>Instances</strong> → <strong>Launch instances</strong>.</li>
+<li><strong>Name:</strong> <code>aws-club-&lt;initials&gt;-web1</code></li>
+<li><strong>AMI:</strong> Amazon Linux 2023 (free tier eligible)</li>
+<li><strong>Instance type:</strong> <code>t3.micro</code></li>
+<li><strong>Key pair:</strong> select the key you created</li>
+<li><strong>Network:</strong> <code>aws-club-&lt;initials&gt;-vpc</code>, subnet <code>aws-club-&lt;initials&gt;-public</code>, <strong>Auto-assign public IP: Enable</strong></li>
+<li><strong>Security group:</strong> Select existing → <code>aws-club-&lt;initials&gt;-sg</code></li>
+<li><strong>Storage:</strong> 8 GiB gp3 (default)</li>
+<li><strong>Launch instance</strong>.</li>
+<li>Wait until <strong>Instance state</strong> = <strong>Running</strong>.</li>
+</ol>
+<p><strong>Record:</strong></p>
+<table><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody><tr><td>Instance ID</td><td><code>i-________________</code></td></tr><tr><td>Public IPv4 address</td><td><code>________________</code></td></tr><tr><td>Private IPv4 address</td><td><code>10.0.1.x</code> (verify in console)</td></tr></tbody></table>
+<hr class="divider">
+<h3 class="step-title" id="step-b8-connect-with-ssh-partner-b">Step B8 — Connect with SSH (Partner B)</h3>
+<p><strong>macOS / Linux:</strong></p>
+<pre><code>ssh -i ~/.ssh/aws-club-xx-key.pem ec2-user@YOUR_PUBLIC_IP</code></pre>
+<p><strong>Windows (OpenSSH, build 1809+):</strong></p>
+<pre><code>ssh -i $env:USERPROFILE\Downloads\aws-club-xx-key.pem ec2-user@YOUR_PUBLIC_IP</code></pre>
+<p><strong>First connection:</strong> type <code>yes</code> when asked about host key fingerprint.</p>
+<p><strong>Expected prompt:</strong></p>
+<pre><code>[ec2-user@ip-10-0-1-xx ~]$</code></pre>
+<p><strong>Troubleshooting:</strong></p>
+<table><thead><tr><th>Problem</th><th>Fix</th></tr></thead><tbody><tr><td><code>Permission denied (publickey)</code></td><td>Wrong key, wrong user (<code>ec2-user</code>), or chmod 400 / icacls missing</td></tr><tr><td><code>Connection timed out</code></td><td>SG allows SSH from <strong>My IP</strong>? Instance running? Public subnet + IGW route? Correct public IP?</td></tr><tr><td><code>Network unreachable</code></td><td>Campus Wi‑Fi blocking port 22 — try hotspot or ask instructor</td></tr></tbody></table>
+<hr class="divider">
+<h3 class="step-title" id="step-b9-install-nginx-and-enable-dynamic-placeholders-on-ec2">Step B9 — Install nginx and enable dynamic placeholders (on EC2)</h3>
+<pre><code>sudo dnf install -y nginx
+sudo systemctl enable nginx
+sudo systemctl start nginx
+sudo systemctl status nginx</code></pre>
+<p><strong>Expected:</strong> <code>active (running)</code>.</p>
+<p>On <strong>Amazon Linux 2023</strong> there is no <code>/etc/nginx/conf.d/default.conf</code>. The default server block is in <code>/etc/nginx/nginx.conf</code> and loads snippets from <code>/etc/nginx/default.d/</code>.</p>
+<p>Create <code>/etc/nginx/default.d/aws-club-lab.conf</code> (content from <code>lab-assets/lab-b-ec2/nginx-lab-snippet.conf</code>):</p>
+<pre><code>sudo tee /etc/nginx/default.d/aws-club-lab.conf &lt;&lt;&#x27;EOF&#x27;
+location / {
+    gzip off;
+    sub_filter_types text/html;
+    sub_filter &#x27;__PRIVATE_IP__&#x27; &#x27;$server_addr&#x27;;
+    sub_filter &#x27;__HOSTNAME__&#x27; &#x27;$hostname&#x27;;
+    sub_filter_once off;
+}
+EOF</code></pre>
+<p>Reload nginx:</p>
+<pre><code>sudo nginx -t &amp;&amp; sudo systemctl reload nginx</code></pre>
+<p><strong>Verify on the instance</strong> (must show <code>ip-10-0-1-xx</code>, <strong>not</strong> <code>__PRIVATE_IP__</code>):</p>
+<pre><code>curl -s http://localhost | grep -E &#x27;ip-10|__PRIVATE&#x27;</code></pre>
+<p>nginx replaces placeholders <strong>when serving the page</strong>, so the same <code>index.html</code> works on every instance without per-machine editing.</p>
+<blockquote class="callout"><strong>Troubleshooting — page still shows <code>__PRIVATE_IP__</code>?</strong><br>1. Confirm the snippet loaded: <code>sudo nginx -T 2&gt;/dev/null | grep -A6 aws-club-lab</code><br>2. <strong><code>gzip off</code> is required</strong> — <code>sub_filter</code> is skipped on gzipped responses (common on AL2023).<br>3. Reload after edits: <code>sudo nginx -t &amp;&amp; sudo systemctl reload nginx</code><br>4. Hard-refresh the browser (Ctrl+Shift+R) or try a private window.</blockquote>
+<p><strong>Next → Step B10:</strong> copy <code>lab-assets/lab-b-ec2/index.html</code> into <code>/usr/share/nginx/html/</code>.</p>
+<hr class="divider">
+<h3 class="step-title" id="step-b10-add-index-html-to-the-web-server">Step B10 — Add <code>index.html</code> to the web server</h3>
+<p>Deploy the lab welcome page from <code>lab-assets/lab-b-ec2/index.html</code> into nginx’s document root (<code>/usr/share/nginx/html/</code>).</p>
+<p><strong>B10.1 — Copy `index.html` to the instance (on your laptop)</strong></p>
+<p>From the <code>materials</code> folder:</p>
+<pre><code>scp -i ~/.ssh/aws-club-xx-key.pem lab-assets/lab-b-ec2/index.html ec2-user@YOUR_PUBLIC_IP:~/</code></pre>
+<p><strong>B10.2 — Install `index.html` as the site home page (on EC2, over SSH)</strong></p>
+<pre><code>sudo cp ~/index.html /usr/share/nginx/html/index.html
+sudo chmod 644 /usr/share/nginx/html/index.html
+ls -l /usr/share/nginx/html/index.html</code></pre>
+<p><strong>B10.3 — Quick check (still on EC2)</strong></p>
+<pre><code>curl -s http://localhost | grep -E &#x27;AWS Club|__PRIVATE_IP__|ip-10&#x27;</code></pre>
+<p><strong>Expected:</strong> HTML contains <strong>Welcome to the AWS Club!</strong> and a hostname like <code>ip-10-0-1-xx</code> (placeholders already replaced by nginx).</p>
+<blockquote class="callout">Without this step, nginx serves its generic default page — not the lab welcome page.</blockquote>
+<hr class="divider">
+<h3 class="step-title" id="step-b11-test-in-browser-partner-a">Step B11 — Test in browser (Partner A)</h3>
+<ol>
+<li>On your laptop browser: <code>http://YOUR_PUBLIC_IP</code></li>
+<li><strong>Expected:</strong> Welcome page titled <strong>Welcome to the AWS Club!</strong> with private IP <code>10.0.1.x</code> and hostname <code>ip-10-0-1-xx</code> displayed.</li>
+</ol>
+<p><strong>Optional — test from EC2:</strong></p>
+<pre><code>curl -s http://localhost | grep ip-10</code></pre>
+<hr class="divider">
+<h3 class="step-title" id="step-b12-stretch-ec2-via-cli-partner-b">Step B12 — ★ Stretch: EC2 via CLI (Partner B)</h3>
+<p>On your laptop:</p>
+<pre><code>aws ec2 describe-instances \
+  --instance-ids i-YOUR_INSTANCE_ID \
+  --query &quot;Reservations[0].Instances[0].[State.Name,PublicIpAddress,PrivateIpAddress,InstanceType]&quot; \
+  --output table</code></pre>
+<hr class="divider">
+<h3 class="step-title" id="step-b13-tag-your-instance-console">Step B13 — Tag your instance (Console)</h3>
+<ol>
+<li>Instances → select your instance → <strong>Tags</strong> tab → <strong>Manage tags</strong>.</li>
+<li>Add: Key <code>Project</code>, Value <code>aws-club-lab</code>.</li>
+</ol>
+<ul class="checkpoint">
+<li>** VPC + public subnet + IGW route</li>
+<li>** Instance running</li>
+<li>** SSH works</li>
+<li>** <code>index.html</code> in <code>/usr/share/nginx/html/</code></li>
+<li>** Welcome page shows private IP and hostname</li>
+</ul>
+<hr class="divider">
+<section class="block" id="lab-c-second-ec2-application-load-balancer-35-min">
+</section>
+<section class="block"><h2 class="section-title lab-c">Lab C — Second EC2 + Application Load Balancer (35 min)</h2>
+<p class="goal"><strong>Goal:</strong> Launch a second web server, then place both instances behind an <strong>Application Load Balancer</strong>. With stickiness <strong>disabled</strong>, refreshing the ALB URL shows a <strong>different hostname</strong> — proof that requests hit different machines.</p>
+<p><strong>Assets:</strong> same <code>lab-assets/lab-b-ec2/index.html</code> and <code>nginx-lab-snippet.conf</code> (see also <code>lab-assets/lab-c-alb/README.md</code>).</p>
+<h3 class="step-title" id="step-c1-second-public-subnet-console">Step C1 — Second public subnet (Console)</h3>
+<p>ALB requires subnets in <strong>at least two Availability Zones</strong>.</p>
+<ol>
+<li>VPC → <strong>Subnets</strong> → <strong>Create subnet</strong>.</li>
+<li><strong>VPC:</strong> <code>aws-club-&lt;initials&gt;-vpc</code></li>
+<li><strong>Name:</strong> <code>aws-club-&lt;initials&gt;-public-b</code></li>
+<li><strong>AZ:</strong> different from Lab B (e.g. <code>eu-central-1b</code>)</li>
+<li><strong>CIDR:</strong> <code>10.0.2.0/24</code></li>
+<li>Enable <strong>auto-assign public IPv4</strong>.</li>
+<li>Associate with the <strong>same public route table</strong> used in Lab B (route to IGW).</li>
+</ol>
+<hr class="divider">
+<h3 class="step-title" id="step-c2-launch-second-ec2-console">Step C2 — Launch second EC2 (Console)</h3>
+<ol>
+<li>EC2 → <strong>Launch instances</strong>.</li>
+<li><strong>Name:</strong> <code>aws-club-&lt;initials&gt;-web2</code></li>
+<li><strong>AMI / type:</strong> Amazon Linux 2023, <code>t3.micro</code> (same as web1)</li>
+<li><strong>Subnet:</strong> <code>aws-club-&lt;initials&gt;-public-b</code></li>
+<li><strong>Security group:</strong> same <code>aws-club-&lt;initials&gt;-sg</code> as web1</li>
+<li><strong>Launch</strong> → record <strong>Public IPv4</strong> of web2.</li>
+</ol>
+<hr class="divider">
+<h3 class="step-title" id="step-c3-configure-web2-ssh">Step C3 — Configure web2 (SSH)</h3>
+<p>Repeat Lab B Steps B8–B10 on <strong>web2</strong>:</p>
+<ol>
+<li>SSH into web2</li>
+<li>Install nginx + create <code>/etc/nginx/default.d/aws-club-lab.conf</code> from <code>nginx-lab-snippet.conf</code></li>
+<li>Copy the <strong>same</strong> <code>index.html</code> to <code>/usr/share/nginx/html/</code></li>
+<li>Verify <code>http://WEB2_PUBLIC_IP</code> shows a <strong>different hostname</strong> than web1</li>
+</ol>
+<hr class="divider">
+<h3 class="step-title" id="step-c4-create-target-group-console">Step C4 — Create target group (Console)</h3>
+<ol>
+<li>EC2 → <strong>Target Groups</strong> → <strong>Create target group</strong>.</li>
+<li><strong>Target type:</strong> Instances</li>
+<li><strong>Name:</strong> <code>aws-club-http-tg</code></li>
+<li><strong>Protocol:</strong> HTTP, <strong>Port:</strong> 80, <strong>VPC:</strong> <code>aws-club-&lt;initials&gt;-vpc</code></li>
+<li><strong>Health check path:</strong> <code>/</code></li>
+<li><strong>Register targets:</strong> select <strong>web1</strong> and <strong>web2</strong> → <strong>Include as pending</strong></li>
+<li><strong>Create target group</strong>.</li>
+<li><strong>Attributes</strong> → <strong>Stickiness</strong> → ensure <strong>Load balancer generated cookie</strong> is <strong>Off</strong> (default).</li>
+</ol>
+<p>Wait until both targets show <strong>Healthy</strong> (1–2 min).</p>
+<hr class="divider">
+<h3 class="step-title" id="step-c5-alb-security-group-console">Step C5 — ALB security group (Console)</h3>
+<ol>
+<li>EC2 → <strong>Security Groups</strong> → <strong>Create security group</strong>.</li>
+<li><strong>Name:</strong> <code>aws-club-&lt;initials&gt;-alb-sg</code></li>
+<li><strong>VPC:</strong> yours</li>
+<li><strong>Inbound:</strong> HTTP 80 from <code>0.0.0.0/0</code></li>
+<li><strong>Create</strong>.</li>
+</ol>
+<p>(Your instance SG already allows HTTP 80 from anywhere, so targets accept ALB traffic.)</p>
+<hr class="divider">
+<h3 class="step-title" id="step-c6-create-application-load-balancer-console">Step C6 — Create Application Load Balancer (Console)</h3>
+<ol>
+<li>EC2 → <strong>Load Balancers</strong> → <strong>Create load balancer</strong> → <strong>Application Load Balancer</strong>.</li>
+<li><strong>Name:</strong> <code>aws-club-alb</code></li>
+<li><strong>Scheme:</strong> Internet-facing</li>
+<li><strong>Network mapping:</strong> <code>aws-club-&lt;initials&gt;-vpc</code>, select <strong>both</strong> public subnets (different AZs)</li>
+<li><strong>Security group:</strong> <code>aws-club-&lt;initials&gt;-alb-sg</code></li>
+<li><strong>Listener:</strong> HTTP :80 → forward to <code>aws-club-http-tg</code></li>
+<li><strong>Create load balancer</strong>.</li>
+</ol>
+<p><strong>Record ALB DNS name:</strong> <code>aws-club-alb-XXXX.eu-central-1.elb.amazonaws.com</code></p>
+<hr class="divider">
+<h3 class="step-title" id="step-c7-test-load-balancing">Step C7 — Test load balancing</h3>
+<ol>
+<li>Browser: <code>http://&lt;ALB-DNS-NAME&gt;/</code></li>
+<li><strong>Refresh 5–10 times</strong> — the <strong>hostname</strong> and <strong>private IP</strong> on the page should <strong>alternate</strong> between web1 and web2.</li>
+<li>★ <strong>Stretch:</strong> <code>sudo systemctl stop nginx</code> on one instance → target becomes <strong>unhealthy</strong> → only one hostname appears.</li>
+</ol>
+<ul class="checkpoint">
+<li>** web2 serves same page with different hostname</li>
+<li>** Target group: both healthy, stickiness off</li>
+<li>** ALB URL alternates hostname on refresh</li>
+</ul>
+<hr class="divider">
+<section class="block" id="lab-d-rds-sqs-observe-light-participation">
+</section>
+<section class="block"><h2 class="section-title lab-d">Lab D — RDS &amp; SQS (observe / light participation)</h2>
+<p class="goal"><strong>Goal:</strong> See managed database and queue — instructor may run these centrally.</p>
+<h3 class="step-title" id="rds-console-tour-students-follow-along">RDS — console tour (students follow along)</h3>
+<ol>
+<li>Console → <strong>RDS</strong> → <strong>Databases</strong> → open instructor’s demo DB.</li>
+<li>Note: <strong>Endpoint</strong>, <strong>Engine</strong> (e.g. MySQL), <strong>VPC security group</strong>.</li>
+<li>Discuss: DB in <strong>private subnet</strong>; only app tier (EC2 SG) allowed on port 3306.</li>
+</ol>
+<p><strong>Optional connect (if instructor provides password):</strong></p>
+<pre><code>mysql -h ENDPOINT -u admin -p</code></pre>
+<hr class="divider">
+<h3 class="step-title" id="sqs-send-a-message-cli">SQS — send a message (CLI)</h3>
+<p>Instructor provides <strong>Queue URL</strong>.</p>
+<pre><code>aws sqs send-message \
+  --queue-url &quot;https://sqs.eu-central-1.amazonaws.com/ACCOUNT/aws-club-queue&quot; \
+  --message-body &quot;Hello from AWS Club lab&quot;</code></pre>
+<p><strong>Console:</strong> SQS → queue → <strong>Send and receive messages</strong> → <strong>Poll for messages</strong>.</p>
+<hr class="divider">
+<section class="block" id="tear-down-mandatory-15-min-before-end">
+</section>
+<section class="block"><h2 class="section-title teardown">Tear-down (mandatory — 15 min before end)</h2>
+<h3 class="step-title" id="delete-load-balancer-lab-c">Delete load balancer (Lab C)</h3>
+<ol>
+<li>EC2 → <strong>Load Balancers</strong> → select <code>aws-club-alb</code> → <strong>Delete</strong>.</li>
+<li>EC2 → <strong>Target Groups</strong> → select <code>aws-club-http-tg</code> → <strong>Delete</strong>.</li>
+</ol>
+<h3 class="step-title" id="terminate-ec2">Terminate EC2</h3>
+<ol>
+<li>EC2 → <strong>Instances</strong> → select <strong>web1</strong> and <strong>web2</strong>.</li>
+<li><strong>Instance state</strong> → <strong>Terminate instance</strong> → confirm.</li>
+<li>Wait until <strong>Terminated</strong>.</li>
+</ol>
+<h3 class="step-title" id="delete-vpc-resources-lab-b-c">Delete VPC resources (Lab B/C)</h3>
+<ol>
+<li>Detach and delete <strong>Internet gateway</strong>.</li>
+<li>Delete <strong>subnets</strong> and <strong>route tables</strong> (if not auto-removed).</li>
+<li>Delete <strong>security groups</strong> and <strong>VPC</strong>.</li>
+</ol>
+<h3 class="step-title" id="delete-key-pair-optional">Delete key pair (optional)</h3>
+<p>EC2 → <strong>Key pairs</strong> → delete lab key (only after instances terminated).</p>
+<h3 class="step-title" id="s3-cleanup-if-allowed">S3 cleanup (if allowed)</h3>
+<ol>
+<li>Bucket → select all objects → <strong>Delete</strong>.</li>
+<li><strong>Empty</strong> bucket version delete if prompted.</li>
+<li><strong>Delete bucket</strong> (or leave if instructor reuses for demos).</li>
+</ol>
+<h3 class="step-title" id="release-elastic-ip">★ Release Elastic IP</h3>
+<p>If you allocated an Elastic IP and attached it: <strong>Release</strong> after instance termination.</p>
+<h3 class="step-title" id="verify">Verify</h3>
+<pre><code>aws ec2 describe-instances --query &quot;Reservations[].Instances[?State.Name!=&#x27;terminated&#x27;].InstanceId&quot;</code></pre>
+<p>Should return <code>[]</code> or only instructor instances.</p>
+<ul class="checkpoint">
+<li>** My EC2 instances terminated</li>
+<li>** No unexpected running resources</li>
+</ul>
+<hr class="divider">
+<section class="block" id="quick-reference-commands">
+</section>
+<section class="block"><h2 class="section-title ">Quick reference — commands</h2>
+<pre><code># Identity
+aws sts get-caller-identity
+
+# S3
+aws s3 ls
+aws s3 cp local.txt s3://bucket/
+aws s3 ls s3://bucket/
+aws s3 rm s3://bucket/local.txt
+
+# EC2
+aws ec2 describe-instances --output table
+
+# SQS
+aws sqs send-message --queue-url URL --message-body &quot;test&quot;</code></pre>
+<hr class="divider">
+<section class="block" id="linux-cheat-sheet-on-ec2">
+</section>
+<section class="block"><h2 class="section-title ">Linux cheat sheet (on EC2)</h2>
+<pre><code>sudo systemctl status nginx
+sudo systemctl restart nginx
+curl http://localhost
+ss -tlnp | grep :80
+tail -f /var/log/nginx/access.log</code></pre>
+<hr class="divider">
+<section class="block" id="report-problems-to-instructor">
+</section>
+<section class="block"><h2 class="section-title ">Report problems to instructor</h2>
+<table><thead><tr><th>Symptom</th><th>Info to provide</th></tr></thead><tbody><tr><td>AccessDenied</td><td>Command + screenshot of IAM user</td></tr><tr><td>SSH fail</td><td>Instance ID, public IP, SG inbound rules screenshot</td></tr><tr><td>Website not loading</td><td>Output of <code>curl localhost</code> on server + SG port 80</td></tr></tbody></table>
+<hr class="divider">
+<p><em>Lab guide version 1.0 — AWS Club 4h workshop</em></p></section>
+    </main>
+  </div>
+  <p class="footer-note">Lab guide version 1.0 — AWS Club 4h workshop · Generated from lab-guide-step-by-step.md</p>
+</body>
+</html>

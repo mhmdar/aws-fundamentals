@@ -1,0 +1,2670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build on AWS: IAM, EC2, S3 & Beyond</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23232F3E'/%3E%3Crect x='8' y='6' width='18' height='14' rx='1.5' fill='%23FF9900' opacity='.35'/%3E%3Crect x='6' y='10' width='18' height='14' rx='1.5' fill='%23FF9900'/%3E%3Crect x='9' y='14' width='12' height='1.5' rx='.75' fill='%23232F3E' opacity='.6'/%3E%3Crect x='9' y='17' width='9' height='1.5' rx='.75' fill='%23232F3E' opacity='.4'/%3E%3Crect x='9' y='20' width='10' height='1.5' rx='.75' fill='%23232F3E' opacity='.4'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --aws-orange: #FF9900;
+      --aws-dark: #232F3E;
+      --aws-blue: #527FFF;
+      --aws-green: #1B8700;
+      --aws-bg: #F2F3F3;
+      --aws-body: #16191F;
+      --aws-red: #D13212;
+      --slide-w: 1280px;
+      --slide-h: 720px;
+      --sidebar-w: 188px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #111;
+      color: var(--aws-body);
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    body.browser-collapsed { --sidebar-w: 36px; }
+
+    #app {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    #slide-browser {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: #1a2533;
+      border-right: 2px solid var(--aws-orange);
+      display: flex;
+      flex-direction: column;
+      transition: width .2s ease;
+      z-index: 110;
+      overflow: hidden;
+    }
+
+    .browser-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .45rem .5rem;
+      background: var(--aws-dark);
+      border-bottom: 1px solid rgba(255,153,0,.35);
+      flex-shrink: 0;
+      min-height: 32px;
+    }
+
+    .browser-header span {
+      color: var(--aws-orange);
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    body.browser-collapsed .browser-header span { display: none; }
+
+    #browser-toggle {
+      background: transparent;
+      border: 1px solid rgba(255,153,0,.5);
+      color: var(--aws-orange);
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: .65rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    #browser-toggle:hover { background: rgba(255,153,0,.15); }
+
+    body.browser-collapsed #browser-toggle { margin: 0 auto; transform: rotate(180deg); }
+
+    #browser-list {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: .25rem 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--aws-orange) #1a2533;
+    }
+
+    #browser-list::-webkit-scrollbar { width: 5px; }
+    #browser-list::-webkit-scrollbar-thumb { background: var(--aws-orange); border-radius: 3px; }
+
+    .browser-item {
+      display: flex;
+      align-items: flex-start;
+      gap: .35rem;
+      width: 100%;
+      padding: .28rem .45rem;
+      border: none;
+      background: transparent;
+      color: #b0b8c4;
+      font-family: inherit;
+      font-size: .68rem;
+      line-height: 1.25;
+      text-align: left;
+      cursor: pointer;
+      border-left: 2px solid transparent;
+    }
+
+    .browser-item:hover {
+      background: rgba(255,255,255,.06);
+      color: #fff;
+    }
+
+    .browser-item.active {
+      background: rgba(255,153,0,.12);
+      color: #fff;
+      border-left-color: var(--aws-orange);
+    }
+
+    .browser-item .bi-num {
+      flex-shrink: 0;
+      width: 1.15rem;
+      color: var(--aws-orange);
+      font-weight: 700;
+      font-size: .62rem;
+      padding-top: .05rem;
+    }
+
+    body.browser-collapsed .browser-item .bi-title { display: none; }
+    body.browser-collapsed .browser-item { justify-content: center; padding: .35rem .2rem; }
+    body.browser-collapsed .browser-item .bi-num { width: auto; }
+
+    .browser-item .bi-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      line-clamp: 2;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .browser-item.lab .bi-num::after { content: '★'; font-size: .5rem; margin-left: 1px; color: var(--aws-orange); }
+
+    #stage {
+      flex: 1;
+      min-width: 0;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      background: #111;
+    }
+
+    #deck {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      position: relative;
+    }
+
+    .slide {
+      display: none;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--aws-bg);
+      border-radius: 0;
+      box-shadow: none;
+      overflow: hidden;
+      flex-direction: column;
+      animation: fadeIn .35s ease;
+      --fs-body: clamp(1.05rem, 1.8vw, 1.28rem);
+      --fs-sm: clamp(.92rem, 1.45vw, 1.08rem);
+      --fs-xs: clamp(.82rem, 1.2vw, .95rem);
+      --fs-code: clamp(.88rem, 1.4vw, 1.05rem);
+    }
+
+    .slide.active { display: flex; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* Title slide */
+    .slide.title-slide {
+      background: var(--aws-dark);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+    }
+
+    .slide.title-slide::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 80% 20%, rgba(255,153,0,.15) 0%, transparent 50%),
+                  radial-gradient(circle at 20% 80%, rgba(82,127,255,.1) 0%, transparent 50%);
+    }
+
+    .title-slide h1 {
+      font-size: clamp(2rem, 4.5vw, 3.2rem);
+      font-weight: 700;
+      z-index: 1;
+      max-width: 90%;
+      line-height: 1.2;
+    }
+
+    .title-slide .accent-line {
+      width: 120px;
+      height: 5px;
+      background: var(--aws-orange);
+      margin: 1.2rem auto;
+      border-radius: 3px;
+      z-index: 1;
+    }
+
+    .title-slide .subtitle {
+      font-size: clamp(1.15rem, 2.2vw, 1.55rem);
+      color: #ccc;
+      z-index: 1;
+    }
+
+    .title-slide .footer {
+      position: absolute;
+      bottom: 5rem;
+      left: 0;
+      right: 0;
+      font-size: 1.1rem;
+      color: #888;
+      z-index: 1;
+    }
+
+    .title-icons {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 1rem;
+      z-index: 1;
+    }
+
+    .title-icon-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      z-index: 1;
+    }
+
+    .title-icon-row.aws-services {
+      gap: .55rem;
+      flex-wrap: nowrap;
+      max-width: none;
+    }
+
+    .title-icon-sep {
+      width: 72px;
+      height: 3px;
+      background: var(--aws-orange);
+      border-radius: 2px;
+      margin: .55rem 0;
+      opacity: .75;
+    }
+
+    .title-icon-row .title-icon {
+      width: 64px;
+      height: 64px;
+      padding: 10px;
+      background: rgba(255,255,255,.95);
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.25);
+      object-fit: contain;
+      box-sizing: border-box;
+    }
+
+    .title-icon-row.aws-services .title-icon {
+      width: 48px;
+      height: 48px;
+      padding: 7px;
+      flex-shrink: 0;
+    }
+
+    .title-icon-row .title-devops-icon {
+      flex-shrink: 0;
+      width: 64px;
+      height: 64px;
+      padding: 12px;
+      background: rgba(255,255,255,.95);
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.25);
+      box-sizing: border-box;
+    }
+
+    .badge-hands-on {
+      display: inline-block;
+      background: var(--aws-orange);
+      color: var(--aws-dark);
+      font-weight: 700;
+      font-size: .9rem;
+      padding: .25rem .75rem;
+      border-radius: 999px;
+      letter-spacing: .05em;
+      margin-bottom: .5rem;
+    }
+
+    /* Standard slide header */
+    .slide-header {
+      background: var(--aws-dark);
+      color: #fff;
+      padding: 1rem 1.5rem .85rem;
+      position: relative;
+      flex-shrink: 0;
+      width: 100%;
+    }
+
+    .slide-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 4px;
+      background: var(--aws-orange);
+    }
+
+    .slide-header h2 {
+      font-size: clamp(1.5rem, 3vw, 2.15rem);
+      font-weight: 700;
+    }
+
+    .slide-header .slide-num {
+      font-size: .95rem;
+      color: var(--aws-orange);
+      font-weight: 600;
+    }
+
+    .slide-body {
+      flex: 1;
+      padding: 1.25rem 1.5rem 1rem;
+      overflow-y: auto;
+      display: flex;
+      gap: 1.25rem;
+      font-size: var(--fs-body);
+    }
+
+    .slide-body.single { flex-direction: column; }
+
+    .col { flex: 1; min-width: 0; }
+
+    ul, ol { padding-left: 1.4rem; }
+    li { margin-bottom: .45rem; line-height: 1.45; font-size: var(--fs-body); }
+    li strong { color: var(--aws-dark); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--fs-sm);
+      margin: .5rem 0;
+    }
+
+    th {
+      background: var(--aws-dark);
+      color: #fff;
+      padding: .55rem .75rem;
+      text-align: left;
+    }
+
+    td {
+      padding: .5rem .75rem;
+      border-bottom: 1px solid #ddd;
+      background: #fff;
+    }
+
+    tr:nth-child(even) td { background: #fafafa; }
+
+    pre, code {
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: var(--fs-code);
+    }
+
+    pre {
+      background: var(--aws-dark);
+      color: #e0e0e0;
+      padding: .85rem 1rem;
+      border-radius: 8px;
+      border-left: 4px solid var(--aws-orange);
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: .85rem 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      border-top: 3px solid var(--aws-orange);
+    }
+
+    .card.blue { border-top-color: var(--aws-blue); }
+    .card.green { border-top-color: var(--aws-green); }
+    .card h3 { font-size: 1.15rem; color: var(--aws-dark); margin-bottom: .4rem; }
+
+    .diagram-box {
+      background: #fff;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 260px;
+      flex: 1.1;
+      align-self: stretch;
+    }
+
+    .col.diagram-box {
+      min-height: 280px;
+    }
+
+    .diagram-box svg {
+      width: 100%;
+      height: 100%;
+      min-height: 220px;
+      flex: 1;
+    }
+
+    .diagram-box svg text {
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+
+    .diagram-box.devops-stack {
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      padding: .5rem .65rem .75rem;
+      gap: 0;
+      overflow: hidden;
+    }
+
+    .devops-diagram-wrap {
+      flex: 1 1 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 280px;
+    }
+
+    .diagram-box.devops-stack .devops-diagram-wrap svg {
+      width: 100%;
+      min-height: 260px;
+      max-height: none;
+      height: auto;
+      flex: none;
+    }
+
+    .devops-ref-wrap {
+      flex: 0 0 auto;
+      margin-top: auto;
+      padding-top: 1.75rem;
+    }
+
+    .devops-ref-image {
+      width: 100%;
+      height: auto;
+      max-height: min(260px, 34vh);
+      object-fit: contain;
+      display: block;
+      border-radius: 4px;
+    }
+
+    .stat-pie svg {
+      width: 88px;
+      height: 88px;
+      min-height: auto;
+      flex: none;
+    }
+
+    .break-slide {
+      background: linear-gradient(135deg, var(--aws-dark) 0%, #1a2533 100%);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .break-slide h1 {
+      font-size: clamp(3rem, 8vw, 5rem);
+      color: var(--aws-orange);
+    }
+
+    .break-slide p { font-size: 1.5rem; color: #aaa; margin-top: 1rem; }
+
+    .qa-slide {
+      background: var(--aws-dark);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .qa-slide h1 {
+      font-size: clamp(3rem, 7vw, 4.5rem);
+      color: var(--aws-orange);
+    }
+
+    .checklist li { list-style: none; padding-left: 0; }
+    .checklist li::before { content: '☐ '; color: var(--aws-orange); font-weight: bold; }
+
+    .pill-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+    .pill {
+      background: var(--aws-orange);
+      color: var(--aws-dark);
+      padding: .35rem .85rem;
+      border-radius: 999px;
+      font-size: .95rem;
+      font-weight: 600;
+    }
+
+    .pill.blue { background: var(--aws-blue); color: #fff; }
+    .pill.green { background: var(--aws-green); color: #fff; }
+
+    .two-col-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+    }
+
+    .warn-box {
+      background: #fff3e0;
+      border: 2px solid var(--aws-orange);
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-top: .5rem;
+    }
+
+    .warn-box svg { flex-shrink: 0; }
+
+    /* Nav */
+    #nav {
+      position: fixed;
+      bottom: 1.25rem;
+      left: calc(var(--sidebar-w) + (100vw - var(--sidebar-w)) / 2);
+      transform: translateX(-50%);
+      transition: left .2s ease;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(35,47,62,.92);
+      padding: .5rem 1.25rem;
+      border-radius: 999px;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+
+    #nav button {
+      background: var(--aws-orange);
+      border: none;
+      color: var(--aws-dark);
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: bold;
+      transition: transform .15s;
+    }
+
+    #nav button:hover { transform: scale(1.1); }
+
+    #slide-counter {
+      color: #fff;
+      font-size: .9rem;
+      min-width: 70px;
+      text-align: center;
+    }
+
+    #progress-bar {
+      position: fixed;
+      top: 0;
+      left: var(--sidebar-w);
+      height: 4px;
+      background: var(--aws-orange);
+      transition: width .3s, left .2s ease;
+      z-index: 100;
+    }
+
+    #notes-toggle {
+      position: fixed;
+      top: .65rem;
+      right: .65rem;
+      background: rgba(35,47,62,.85);
+      color: #fff;
+      border: 1px solid var(--aws-orange);
+      padding: .4rem .8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: .8rem;
+      z-index: 100;
+    }
+
+    #speaker-notes {
+      display: none;
+      position: fixed;
+      bottom: 4.5rem;
+      left: calc(var(--sidebar-w) + (100vw - var(--sidebar-w)) / 2);
+      transform: translateX(-50%);
+      width: min(calc(100vw - var(--sidebar-w) - 2rem), 800px);
+      transition: left .2s ease, width .2s ease;
+      background: rgba(0,0,0,.88);
+      color: #ccc;
+      padding: .75rem 1rem;
+      border-radius: 8px;
+      font-size: .85rem;
+      z-index: 99;
+      border-left: 3px solid var(--aws-orange);
+    }
+
+    #speaker-notes.visible { display: block; }
+
+    .takeaway-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.6rem; height: 1.6rem;
+      background: var(--aws-orange);
+      color: var(--aws-dark);
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: .95rem;
+      margin-right: .5rem;
+    }
+
+    .aws-top10-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: .5rem .75rem;
+      width: 100%;
+    }
+
+    .aws-svc-card {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      background: #fff;
+      border-radius: 8px;
+      padding: .45rem .6rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      border-left: 3px solid var(--aws-orange);
+      min-height: 58px;
+    }
+
+    .aws-svc-card:nth-child(even) { border-left-color: var(--aws-blue); }
+
+    .aws-svc-rank {
+      flex-shrink: 0;
+      width: 1.35rem;
+      height: 1.35rem;
+      background: var(--aws-dark);
+      color: var(--aws-orange);
+      border-radius: 50%;
+      font-size: .82rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .aws-svc-icon {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+    }
+
+    .aws-svc-info { min-width: 0; }
+
+    .aws-svc-info strong {
+      display: block;
+      font-size: var(--fs-sm);
+      color: var(--aws-dark);
+      line-height: 1.2;
+    }
+
+    .aws-svc-info span {
+      display: block;
+      font-size: var(--fs-xs);
+      color: #555;
+      line-height: 1.25;
+    }
+
+    .s3-hero {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.25rem;
+      margin-bottom: .75rem;
+    }
+
+    .s3-hero-icon {
+      flex-shrink: 0;
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+      background: #fff;
+      border-radius: 12px;
+      padding: .5rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,.1);
+    }
+
+    .s3-hero-text p {
+      font-size: var(--fs-body);
+      line-height: 1.5;
+      margin-bottom: .45rem;
+    }
+
+    .storage-compare td:first-child { font-weight: 600; color: var(--aws-dark); white-space: nowrap; }
+
+    .term-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: .5rem;
+      width: 100%;
+    }
+
+    .term-item {
+      background: #fff;
+      border-radius: 8px;
+      padding: .5rem .65rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      border-top: 3px solid var(--aws-orange);
+    }
+
+    .term-item:nth-child(even) { border-top-color: var(--aws-blue); }
+
+    .term-item strong {
+      display: block;
+      font-size: var(--fs-sm);
+      color: var(--aws-dark);
+      margin-bottom: .15rem;
+    }
+
+    .term-item span {
+      font-size: var(--fs-xs);
+      color: #555;
+      line-height: 1.35;
+    }
+
+    .usecase-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .55rem;
+      width: 100%;
+    }
+
+    .usecase-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: .65rem .75rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,.08);
+      border-left: 3px solid var(--aws-orange);
+      display: flex;
+      align-items: flex-start;
+      gap: .5rem;
+    }
+
+    .usecase-card:nth-child(3n+2) { border-left-color: var(--aws-blue); }
+    .usecase-card:nth-child(3n) { border-left-color: var(--aws-green); }
+
+    .usecase-card img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .usecase-card strong {
+      display: block;
+      font-size: var(--fs-sm);
+      color: var(--aws-dark);
+      margin-bottom: .15rem;
+    }
+
+    .usecase-card span {
+      font-size: var(--fs-xs);
+      color: #555;
+      line-height: 1.3;
+    }
+
+    .stat-pie-row {
+      display: flex;
+      gap: .75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: .5rem 0;
+    }
+
+    .stat-pie {
+      text-align: center;
+      background: #fff;
+      border-radius: 8px;
+      padding: .45rem .55rem .35rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      min-width: 108px;
+    }
+
+    .stat-pie svg { display: block; margin: 0 auto; }
+
+    .stat-pie .pie-label {
+      font-size: .72rem;
+      font-weight: 600;
+      color: var(--aws-dark);
+      margin-top: .2rem;
+      line-height: 1.2;
+    }
+
+    .key-visual-slide .slide-body {
+      flex-direction: column;
+      gap: .5rem;
+      padding: .85rem 1.1rem .75rem;
+    }
+
+    .key-visual-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .6rem;
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+    }
+
+    .key-visual-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: .5rem .55rem .6rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      min-height: 0;
+    }
+
+    .key-visual-card h3 {
+      font-size: .82rem;
+      color: var(--aws-dark);
+      margin-bottom: .2rem;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .key-visual-card svg {
+      width: 100%;
+      height: auto;
+      flex: 1;
+      min-height: 155px;
+    }
+
+    .key-visual-card .key-caption {
+      font-size: .68rem;
+      color: #555;
+      margin-top: .35rem;
+      line-height: 1.35;
+    }
+
+    .key-visual-card .key-caption code {
+      background: #f0f1f2;
+      padding: .05rem .25rem;
+      border-radius: 3px;
+      font-size: .65rem;
+    }
+
+    .key-visual-card.connect { border-top: 3px solid var(--aws-blue); }
+    .key-visual-card.perms { border-top: 3px solid var(--aws-orange); }
+    .key-visual-card.git-safe { border-top: 3px solid var(--aws-green); }
+
+    .stat-pie .pie-stat {
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--aws-green);
+    }
+
+    .stat-pie .pie-legend {
+      font-size: .68rem;
+      color: #666;
+      margin-top: .15rem;
+    }
+
+    .cli-points {
+      background: #fff;
+      border-radius: 8px;
+      padding: .5rem .65rem;
+      border-left: 3px solid var(--aws-blue);
+      margin-top: .5rem;
+    }
+
+    .cli-points h3 {
+      font-size: .95rem;
+      color: var(--aws-dark);
+      margin-bottom: .3rem;
+    }
+
+    .cli-points li {
+      font-size: var(--fs-xs);
+      margin-bottom: .25rem;
+    }
+
+    .linux-cheat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .42rem;
+      width: 100%;
+    }
+
+    .cheat-block {
+      background: #fff;
+      border-radius: 10px;
+      padding: .42rem .55rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,.08);
+      border-top: 3px solid var(--aws-orange);
+    }
+
+    .cheat-block:nth-child(3n+2) { border-top-color: var(--aws-blue); }
+    .cheat-block:nth-child(3n) { border-top-color: var(--aws-green); }
+
+    .cheat-block h3 {
+      font-size: var(--fs-sm);
+      color: var(--aws-dark);
+      margin-bottom: .28rem;
+      font-weight: 700;
+    }
+
+    .cheat-cmds {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .cheat-cmds li {
+      font-size: var(--fs-xs);
+      line-height: 1.3;
+      margin-bottom: .14rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .12rem .3rem;
+      align-items: baseline;
+    }
+
+    .cheat-cmds code {
+      background: var(--aws-dark);
+      color: #ffb84d;
+      padding: .06rem .28rem;
+      border-radius: 4px;
+      font-size: clamp(.68rem, 1vw, .82rem);
+      white-space: nowrap;
+    }
+
+    .cheat-cmds code.lab {
+      outline: 1px solid var(--aws-orange);
+      box-shadow: 0 0 6px rgba(255,153,0,.35);
+    }
+
+    .cheat-cmds li span {
+      color: #666;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .cheat-footnote {
+      font-size: var(--fs-xs);
+      color: #666;
+      text-align: center;
+      margin-top: .55rem;
+    }
+
+    @media (max-width: 768px) {
+      .slide-body { flex-direction: column; }
+      .two-col-grid { grid-template-columns: 1fr; }
+      .aws-top10-grid { grid-template-columns: 1fr; }
+      .term-grid { grid-template-columns: 1fr; }
+      .usecase-grid { grid-template-columns: 1fr; }
+      .linux-cheat-grid { grid-template-columns: 1fr; }
+      .key-visual-grid { grid-template-columns: 1fr; }
+      .s3-hero { flex-direction: column; align-items: center; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<div id="app">
+  <aside id="slide-browser">
+    <div class="browser-header">
+      <span>Slides</span>
+      <button id="browser-toggle" type="button" title="Toggle sidebar (B)" aria-label="Toggle slide browser">◀</button>
+    </div>
+    <nav id="browser-list" aria-label="Slide browser"></nav>
+  </aside>
+
+  <main id="stage">
+    <button id="notes-toggle" onclick="toggleNotes()">Speaker Notes (N)</button>
+    <div id="speaker-notes"></div>
+
+    <div id="deck">
+
+<!-- SLIDE 1 -->
+<section class="slide title-slide active" data-notes="Welcome. Mention survey-driven agenda: concepts, labs, careers. ~65% hands-on.">
+  <div class="title-icons" aria-hidden="true">
+    <div class="title-icon-row">
+      <img class="title-icon" src="https://unpkg.com/simple-icons@11.14.0/icons/amazonaws.svg" alt="AWS" loading="eager">
+      <svg class="title-devops-icon" viewBox="0 0 24 24" aria-label="DevOps">
+        <path d="M12 12 C12 7.5 6.5 7.5 6.5 12 C6.5 16.5 12 16.5 12 12"
+              fill="none" stroke="#527FFF" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M12 12 C12 7.5 17.5 7.5 17.5 12 C17.5 16.5 12 16.5 12 12"
+              fill="none" stroke="#1B8700" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      <img class="title-icon" src="https://raw.githubusercontent.com/devicons/devicon/master/icons/linux/linux-original.svg" alt="Linux" loading="eager">
+      <img class="title-icon" src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" alt="Docker" loading="eager">
+    </div>
+    <div class="title-icon-sep"></div>
+    <div class="title-icon-row aws-services">
+      <img class="title-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Security-Identity-Compliance/64/Arch_AWS-Identity-and-Access-Management_64.svg" alt="IAM" loading="eager">
+      <img class="title-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Compute/64/Arch_Amazon-EC2_64.svg" alt="EC2" loading="eager">
+      <img class="title-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Storage/64/Arch_Amazon-Simple-Storage-Service_64.svg" alt="S3" loading="eager">
+      <img class="title-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Networking-Content-Delivery/64/Arch_Elastic-Load-Balancing_64.svg" alt="ALB" loading="eager">
+      <img class="title-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Database/64/Arch_Amazon-RDS_64.svg" alt="RDS" loading="eager">
+      <img class="title-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_App-Integration/Arch_64/Arch_Amazon-Simple-Queue-Service_64.svg" alt="SQS" loading="eager">
+    </div>
+    <div class="title-icon-sep"></div>
+  </div>
+  <span class="badge-hands-on">HANDS-ON WORKSHOP</span>
+  <h1>Build on AWS: IAM, EC2, S3 & Beyond</h1>
+  <div class="accent-line"></div>
+  <p class="subtitle">Hands-On Workshop &nbsp;|&nbsp; Birzeit University AWS Club</p>
+  <p class="footer">Instructor name: Muhammad AbedRabbo |&nbsp; Date: 07/06/2026</p>
+</section>
+
+<!-- SLIDE 2 -->
+<section class="slide" data-notes="Run hands-up: Linux? AWS Console? Git? Adjust pace accordingly.">
+  <div class="slide-header"><span class="slide-num">01 / 50</span><h2>Who is in the room?</h2></div>
+  <div class="slide-body">
+    <div class="col">
+      <div class="card">
+        <h3>👥 The audience — you</h3>
+        <ul style="padding-left:1.1rem;margin-top:.35rem">
+          <li><strong>BZU IT Dept. students</strong> — Computer Engineering &amp; CS, years 1–4</li>
+          <li>Mixed levels: stronger on <strong>networking &amp; Linux</strong>; newer on <strong>cloud, IaC, CI/CD</strong></li>
+        </ul>
+      </div>
+      <div class="card blue" style="margin-top:.75rem">
+        <h3>🎤 Your presenter</h3>
+        <ul style="padding-left:1.1rem;margin-top:.35rem">
+          <li><strong>Muhammad AbedRabbo</strong></li>
+          <li>DevOps/CloudOps Team Lead @ Progineer Technologies.</li>
+          <li>Bachelor's degree in Electrical Engineering from Birzeit University in 2008.</li>
+          <li>MSc in Software Engineering from Birzeit University in 2020.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card green">
+        <h3>📋 How we'll work today</h3>
+        <ul style="padding-left:1.1rem;margin-top:.35rem">
+          <li>Today designed for <strong>one path</strong> with optional ★ stretch steps</li>
+          <li><strong>Pair work:</strong> one partner on Console, one on CLI/terminal</li>
+        </ul>
+      </div>
+      <div class="card blue" style="margin-top:.75rem">
+        <h3>🙋 Interactive</h3>
+        <p>Hands up: Who has used <strong>Linux</strong>? <strong>AWS Console</strong>? <strong>Git</strong>?</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 3 -->
+<section class="slide" data-notes="Set expectation: ~65% doing. Pair work — Console + CLI partners.">
+  <div class="slide-header"><span class="slide-num">02 / 50</span><h2>What you will learn today</h2></div>
+  <div class="slide-body">
+    <div class="col">
+      <ul>
+        <li><strong>Cloud fundamentals</strong> — IaaS, regions, shared responsibility</li>
+        <li><strong>Skills ramp-up</strong> — Linux, Git, Console vs CLI</li>
+        <li><strong>Core services</strong> — IAM, S3, EC2, ALB, RDS, SQS</li>
+        <li><strong>Hands-on labs</strong> with a real artifact</li>
+        <li><strong>Path to certifications</strong> and DevOps careers</li>
+      </ul>
+      <div class="pill-row">
+        <span class="pill">Concepts</span><span class="pill blue">Labs</span><span class="pill green">Careers</span>
+      </div>
+    </div>
+    <div class="col diagram-box">
+      <svg viewBox="0 0 420 120" width="100%" preserveAspectRatio="xMidYMid meet">
+        <defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#FF9900"/></marker></defs>
+        <rect x="5" y="40" width="55" height="40" rx="6" fill="#527FFF"/><text x="32" y="65" text-anchor="middle" fill="#fff" font-size="12">Concepts</text>
+        <rect x="75" y="40" width="55" height="40" rx="6" fill="#527FFF"/><text x="102" y="65" text-anchor="middle" fill="#fff" font-size="12">Linux</text>
+        <rect x="145" y="40" width="55" height="40" rx="6" fill="#527FFF"/><text x="172" y="65" text-anchor="middle" fill="#fff" font-size="12">IAM</text>
+        <rect x="215" y="40" width="55" height="40" rx="6" fill="#FF9900"/><text x="242" y="65" text-anchor="middle" fill="#232F3E" font-size="12" font-weight="bold">S3 Lab</text>
+        <rect x="285" y="40" width="55" height="40" rx="6" fill="#FF9900"/><text x="312" y="65" text-anchor="middle" fill="#232F3E" font-size="12" font-weight="bold">EC2 Lab</text>
+        <rect x="355" y="40" width="55" height="40" rx="6" fill="#1B8700"/><text x="382" y="65" text-anchor="middle" fill="#fff" font-size="12">Careers</text>
+        <line x1="60" y1="60" x2="75" y2="60" stroke="#FF9900" stroke-width="2" marker-end="url(#arr)"/>
+        <line x1="130" y1="60" x2="145" y2="60" stroke="#FF9900" stroke-width="2" marker-end="url(#arr)"/>
+        <line x1="200" y1="60" x2="215" y2="60" stroke="#FF9900" stroke-width="2" marker-end="url(#arr)"/>
+        <line x1="270" y1="60" x2="285" y2="60" stroke="#FF9900" stroke-width="2" marker-end="url(#arr)"/>
+        <line x1="340" y1="60" x2="355" y2="60" stroke="#FF9900" stroke-width="2" marker-end="url(#arr)"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 4 -->
+<section class="slide" data-notes="Point to breaks. If late, shorten Lab C stretch steps but never skip tear-down.">
+  <div class="slide-header"><span class="slide-num">03 / 50</span><h2>Agenda — 4 hours</h2></div>
+  <div class="slide-body single">
+    <table>
+      <tr><th>Time</th><th>Topic</th><th>Mode</th></tr>
+      <tr><td>0:00</td><td>Welcome &amp; setup</td><td>Talk</td></tr>
+      <tr><td>0:10</td><td>Cloud concepts</td><td>Talk + diagrams</td></tr>
+      <tr><td>0:45</td><td>Linux + Git ramp-up</td><td>Demo</td></tr>
+      <tr><td>1:20</td><td>IAM &amp; AWS CLI</td><td>Talk + Lab 0</td></tr>
+      <tr style="background:#fff3e0"><td>1:50</td><td><strong>Lab A: Amazon S3</strong></td><td><strong>Hands-on</strong></td></tr>
+      <tr style="background:#fff3e0"><td>2:25</td><td><strong>Lab B: Amazon EC2</strong> (one instance)</td><td><strong>Hands-on</strong></td></tr>
+      <tr style="background:#fff3e0"><td>3:05</td><td><strong>Lab C: ALB</strong> (second instance + load balancer)</td><td><strong>Hands-on</strong></td></tr>
+      <tr><td>3:25</td><td>RDS &amp; SQS</td><td>Talk</td></tr>
+      <tr><td>3:45</td><td>Containers, CI/CD, IaC &amp; careers</td><td>Talk + Q&amp;A</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- SLIDE 5 -->
+<section class="slide" data-notes="Emphasize real billing. Budget alarm on sandbox account.">
+  <div class="slide-header"><span class="slide-num">04 / 50</span><h2>House rules &amp; safety</h2></div>
+  <div class="slide-body single">
+    <ul>
+      <li>Use <strong>lab IAM user</strong> only — never share root keys</li>
+      <li>Tag resources: <code>Project=aws-club-lab</code></li>
+      <li>Security groups: SSH only from <strong>My IP</strong></li>
+      <li><strong>Tear down</strong> EC2 at end — costs real money</li>
+      <li>Ask before clicking Delete on shared resources</li>
+    </ul>
+    <div class="warn-box">
+      <svg width="36" height="36" viewBox="0 0 36 36"><polygon points="18,3 35,33 1,33" fill="#FF9900"/><text x="18" y="26" text-anchor="middle" fill="#232F3E" font-size="18" font-weight="bold">!</text></svg>
+      <span>AWS bills real money. Always terminate EC2 instances when done.</span>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 6 -->
+<section class="slide" data-notes="Morning = concepts + identity + storage. Afternoon = compute + traffic + data + messaging.">
+  <div class="slide-header"><span class="slide-num">05 / 50</span><h2>Session architecture — big picture</h2></div>
+  <div class="slide-body">
+    <div class="col diagram-box">
+      <svg viewBox="0 0 480 260" width="100%">
+        <rect x="190" y="10" width="100" height="36" rx="6" fill="#527FFF"/><text x="240" y="33" text-anchor="middle" fill="#fff" font-size="12">Users</text>
+        <rect x="190" y="60" width="100" height="36" rx="6" fill="#FF9900"/><text x="240" y="83" text-anchor="middle" fill="#232F3E" font-size="11" font-weight="bold">ALB</text>
+        <rect x="100" y="120" width="80" height="36" rx="6" fill="#232F3E"/><text x="140" y="143" text-anchor="middle" fill="#fff" font-size="11">EC2 #1</text>
+        <rect x="300" y="120" width="80" height="36" rx="6" fill="#232F3E"/><text x="340" y="143" text-anchor="middle" fill="#fff" font-size="11">EC2 #2</text>
+        <ellipse cx="240" cy="200" rx="50" ry="28" fill="#1B8700"/><text x="240" y="205" text-anchor="middle" fill="#fff" font-size="11">RDS</text>
+        <rect x="380" y="120" width="70" height="36" rx="6" fill="#527FFF"/><text x="415" y="143" text-anchor="middle" fill="#fff" font-size="12">SQS</text>
+        <rect x="30" y="100" width="420" height="150" rx="10" fill="none" stroke="#FF9900" stroke-width="2" stroke-dasharray="6,4"/><text x="240" y="268" text-anchor="middle" fill="#888" font-size="11">VPC</text>
+        <line x1="240" y1="46" x2="240" y2="60" stroke="#333" stroke-width="2"/><line x1="240" y1="96" x2="140" y2="120" stroke="#333" stroke-width="2"/><line x1="240" y1="96" x2="340" y2="120" stroke="#333" stroke-width="2"/>
+        <line x1="140" y1="156" x2="200" y2="185" stroke="#333" stroke-width="2"/><line x1="340" y1="156" x2="280" y2="185" stroke="#333" stroke-width="2"/>
+        <line x1="340" y1="138" x2="380" y2="138" stroke="#527FFF" stroke-width="2"/>
+      </svg>
+    </div>
+    <div class="col">
+      <ul>
+        <li>Today we build pieces of this picture <strong>step by step</strong></li>
+        <li><strong>Morning</strong> = concepts + identity + storage</li>
+        <li><strong>Afternoon</strong> = compute + traffic + data + messaging</li>
+      </ul>
+      <div class="pill-row"><span class="pill">Web Tier</span><span class="pill blue">Data Tier</span><span class="pill green">Async</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 7 -->
+<section class="slide" data-notes="Ask: What do startups prefer, CapEx or OpEx? Answer: OpEx.">
+  <div class="slide-header"><span class="slide-num">06 / 50</span><h2>Why cloud?</h2></div>
+  <div class="slide-body">
+    <div class="col">
+      <div class="two-col-grid">
+        <div class="card"><h3>🏢 On-premises</h3><ul><li><strong>CapEx</strong> — buy hardware upfront</li><li>Scale slowly (weeks)</li><li>You run the datacenter</li></ul></div>
+        <div class="card green"><h3>☁️ Cloud</h3><ul><li><strong>OpEx</strong> — pay as you go</li><li>Scale in minutes</li><li>Focus on <strong>applications</strong></li></ul></div>
+      </div>
+    </div>
+    <div class="col diagram-box">
+      <svg viewBox="0 0 200 160" width="100%">
+        <rect x="10" y="20" width="80" height="120" rx="4" fill="#ddd" stroke="#888"/><text x="50" y="85" text-anchor="middle" font-size="11">On-Prem</text>
+        <text x="50" y="100" text-anchor="middle" font-size="12" fill="#666">CapEx</text>
+        <ellipse cx="150" cy="80" rx="40" ry="25" fill="#527FFF" opacity=".3" stroke="#527FFF"/><ellipse cx="135" cy="70" rx="20" ry="14" fill="#527FFF" opacity=".5"/><ellipse cx="165" cy="68" rx="22" ry="15" fill="#527FFF" opacity=".5"/>
+        <text x="150" y="130" text-anchor="middle" font-size="11">Cloud</text><text x="150" y="145" text-anchor="middle" font-size="12" fill="#1B8700">OpEx</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 8 -->
+<section class="slide" data-notes="Memory aid: higher layer = less you manage.">
+  <div class="slide-header"><span class="slide-num">07 / 50</span><h2>Cloud service models</h2></div>
+  <div class="slide-body">
+    <div class="col">
+      <table>
+        <tr><th>Model</th><th>You manage</th><th>AWS example</th></tr>
+        <tr><td><strong>IaaS</strong></td><td>OS, apps, data</td><td>EC2</td></tr>
+        <tr><td><strong>PaaS</strong></td><td>Apps, data</td><td>Elastic Beanstalk, RDS</td></tr>
+        <tr><td><strong>SaaS</strong></td><td>Use the software</td><td>Chime, AWS Console</td></tr>
+      </table>
+    </div>
+    <div class="col diagram-box">
+      <svg viewBox="0 0 180 200" width="100%">
+        <rect x="30" y="10" width="120" height="35" rx="4" fill="#1B8700"/><text x="90" y="32" text-anchor="middle" fill="#fff" font-size="11">SaaS</text>
+        <rect x="30" y="55" width="120" height="35" rx="4" fill="#527FFF"/><text x="90" y="77" text-anchor="middle" fill="#fff" font-size="11">PaaS</text>
+        <rect x="30" y="100" width="120" height="35" rx="4" fill="#FF9900"/><text x="90" y="122" text-anchor="middle" fill="#232F3E" font-size="11" font-weight="bold">IaaS</text>
+        <rect x="30" y="145" width="120" height="40" rx="4" fill="#232F3E"/><text x="90" y="170" text-anchor="middle" fill="#fff" font-size="11">AWS Infrastructure</text>
+        <text x="90" y="198" text-anchor="middle" font-size="12" fill="#888">↑ less you manage</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 9 -->
+<section class="slide" data-notes="Confirm sandbox region. All students use same region.">
+  <div class="slide-header"><span class="slide-num">08 / 50</span><h2>AWS global infrastructure</h2></div>
+  <div class="slide-body">
+    <div class="col">
+      <ul>
+        <li><strong>Region</strong> — geographic area (e.g. <code>eu-central-1</code>)</li>
+        <li><strong>Availability Zone</strong> — isolated DC within region</li>
+        <li>Design for failure: spread across <strong>2+ AZs</strong> in production</li>
+        <li>Choose region: latency, price, compliance</li>
+      </ul>
+    </div>
+    <div class="col diagram-box">
+      <svg viewBox="0 0 280 180" width="100%">
+        <rect x="80" y="10" width="120" height="30" rx="6" fill="#232F3E"/><text x="140" y="30" text-anchor="middle" fill="#FF9900" font-size="12">Region</text>
+        <rect x="20" y="60" width="70" height="40" rx="4" fill="#527FFF"/><text x="55" y="85" text-anchor="middle" fill="#fff" font-size="12">AZ-a</text>
+        <rect x="105" y="60" width="70" height="40" rx="4" fill="#527FFF"/><text x="140" y="85" text-anchor="middle" fill="#fff" font-size="12">AZ-b</text>
+        <rect x="190" y="60" width="70" height="40" rx="4" fill="#527FFF"/><text x="225" y="85" text-anchor="middle" fill="#fff" font-size="12">AZ-c</text>
+        <line x1="140" y1="40" x2="55" y2="60" stroke="#FF9900" stroke-width="2"/><line x1="140" y1="40" x2="140" y2="60" stroke="#FF9900" stroke-width="2"/><line x1="140" y1="40" x2="225" y2="60" stroke="#FF9900" stroke-width="2"/>
+        <text x="140" y="140" text-anchor="middle" font-size="11" fill="#1B8700">Production: multi-AZ for resilience</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 10 -->
+<section class="slide" data-notes="Quick check: Who patches nginx on EC2? Answer: Student/you.">
+  <div class="slide-header"><span class="slide-num">09 / 50</span><h2>Shared responsibility model</h2></div>
+  <div class="slide-body">
+    <div class="col diagram-box">
+      <svg viewBox="0 0 320 200" width="100%">
+        <rect x="10" y="20" width="140" height="160" rx="8" fill="#232F3E"/><text x="80" y="45" text-anchor="middle" fill="#FF9900" font-size="12" font-weight="bold">AWS</text>
+        <text x="80" y="70" text-anchor="middle" fill="#fff" font-size="12">Hardware</text><text x="80" y="88" text-anchor="middle" fill="#fff" font-size="12">Hypervisor</text><text x="80" y="106" text-anchor="middle" fill="#fff" font-size="12">Physical security</text><text x="80" y="124" text-anchor="middle" fill="#fff" font-size="12">Global network</text>
+        <text x="80" y="160" text-anchor="middle" fill="#aaa" font-size="12">Security OF the cloud</text>
+        <rect x="170" y="20" width="140" height="160" rx="8" fill="#1B8700"/><text x="240" y="45" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">YOU</text>
+        <text x="240" y="70" text-anchor="middle" fill="#fff" font-size="12">OS patches (EC2)</text><text x="240" y="88" text-anchor="middle" fill="#fff" font-size="12">App code &amp; bugs</text><text x="240" y="106" text-anchor="middle" fill="#fff" font-size="12">IAM &amp; access keys</text><text x="240" y="124" text-anchor="middle" fill="#fff" font-size="12">S3 bucket policies</text>
+        <text x="240" y="160" text-anchor="middle" fill="#ccc" font-size="12">Security IN the cloud</text>
+      </svg>
+    </div>
+    <div class="col">
+      <ul>
+        <li><strong>AWS:</strong> security <em>of</em> the cloud</li>
+        <li><strong>You:</strong> security <em>in</em> the cloud</li>
+        <li><strong>S3:</strong> you control who accesses objects</li>
+        <li><strong>RDS:</strong> you set DB credentials; AWS patches engine</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 11 -->
+<section class="slide" data-notes="Free tier helps but set budget alarms anyway.">
+  <div class="slide-header"><span class="slide-num">10 / 50</span><h2>Pricing mindset</h2></div>
+  <div class="slide-body single">
+    <ul>
+      <li>Pay for what you use (per second/hour/GB/request)</li>
+      <li><strong>Free tier</strong> helps learning — still set <strong>budget alarms</strong></li>
+      <li>Stop instances when done</li>
+      <li>Lab today: <code>t3.micro</code>, small S3 storage</li>
+    </ul>
+    <div class="two-col-grid" style="margin-top:.75rem">
+      <div class="card"><h3>💲 Pay-as-you-go</h3><p>No upfront hardware costs</p></div>
+      <div class="card" style="border-top-color:#D13212"><h3>🔔 Budget alarm</h3><p>Get email before surprise bills</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 12 — Top 10 AWS services (NEW) -->
+<section class="slide" data-notes="Quick orientation before break. Emphasize IAM first — everything in AWS starts with identity. Several of these are covered in today's labs.">
+  <div class="slide-header"><span class="slide-num">11 / 50</span><h2>Top 10 key AWS services</h2></div>
+  <div class="slide-body single">
+    <p style="font-size:var(--fs-sm);margin-bottom:.6rem;color:#555">Ranked by foundational importance — master these first.</p>
+    <div class="aws-top10-grid">
+      <div class="aws-svc-card">
+        <span class="aws-svc-rank">1</span>
+        <img class="aws-svc-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Security-Identity-Compliance/64/Arch_AWS-Identity-and-Access-Management_64.svg" alt="IAM" loading="lazy">
+        <div class="aws-svc-info"><strong>IAM</strong><span>Identity &amp; access — who can do what</span></div>
+      </div>
+      <div class="aws-svc-card">
+        <span class="aws-svc-rank">2</span>
+        <img class="aws-svc-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Compute/64/Arch_Amazon-EC2_64.svg" alt="EC2" loading="lazy">
+        <div class="aws-svc-info"><strong>Amazon EC2</strong><span>Virtual servers in the cloud</span></div>
+      </div>
+      <div class="aws-svc-card">
+        <span class="aws-svc-rank">3</span>
+        <img class="aws-svc-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Storage/64/Arch_Amazon-Simple-Storage-Service_64.svg" alt="S3" loading="lazy">
+        <div class="aws-svc-info"><strong>Amazon S3</strong><span>Object storage — files &amp; static sites</span></div>
+      </div>
+      <div class="aws-svc-card">
+        <span class="aws-svc-rank">4</span>
+        <img class="aws-svc-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Networking-Content-Delivery/64/Arch_Amazon-Virtual-Private-Cloud_64.svg" alt="VPC" loading="lazy">
+        <div class="aws-svc-info"><strong>Amazon VPC</strong><span>Private network for your resources</span></div>
+      </div>
+      <div class="aws-svc-card">
+        <span class="aws-svc-rank">5</span>
+        <img class="aws-svc-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Database/64/Arch_Amazon-RDS_64.svg" alt="RDS" loading="lazy">
+        <div class="aws-svc-info"><strong>Amazon RDS</strong><span>Managed relational databases</span></div>
+      </div>
+      <div class="aws-svc-card">
+        <span class="aws-svc-rank">6</span>
+        <img class="aws-svc-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Compute/64/Arch_AWS-Lambda_64.svg" alt="Lambda" loading="lazy">
+        <div class="aws-svc-info"><strong>AWS Lambda</strong><span>Serverless — run code without servers</span></div>
+      </div>
+      <div class="aws-svc-card">
+        <span class="aws-svc-rank">7</span>
+        <img class="aws-svc-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Networking-Content-Delivery/64/Arch_Elastic-Load-Balancing_64.svg" alt="ELB" loading="lazy">
+        <div class="aws-svc-info"><strong>Elastic Load Balancing</strong><span>Distribute traffic across targets</span></div>
+      </div>
+      <div class="aws-svc-card">
+        <span class="aws-svc-rank">8</span>
+        <img class="aws-svc-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Management-Governance/64/Arch_Amazon-CloudWatch_64.svg" alt="CloudWatch" loading="lazy">
+        <div class="aws-svc-info"><strong>Amazon CloudWatch</strong><span>Metrics, logs &amp; alarms</span></div>
+      </div>
+      <div class="aws-svc-card">
+        <span class="aws-svc-rank">9</span>
+        <img class="aws-svc-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_App-Integration/Arch_64/Arch_Amazon-Simple-Queue-Service_64.svg" alt="SQS" loading="lazy">
+        <div class="aws-svc-info"><strong>Amazon SQS</strong><span>Message queues — decouple components</span></div>
+      </div>
+      <div class="aws-svc-card">
+        <span class="aws-svc-rank">10</span>
+        <img class="aws-svc-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Networking-Content-Delivery/64/Arch_Amazon-Route-53_64.svg" alt="Route 53" loading="lazy">
+        <div class="aws-svc-info"><strong>Amazon Route 53</strong><span>DNS routing &amp; domain management</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 13 -->
+<section class="slide break-slide" data-notes="10 minute break. Return for Linux + Git.">
+  <h1>☕ Break</h1>
+  <p>10 minutes &nbsp;|&nbsp; Clock: 0:35</p>
+</section>
+
+<!-- SLIDE 13 -->
+<section class="slide" data-notes="Reassure Windows users — PowerShell or CloudShell works. Stats are industry estimates (Linux Foundation, W3Techs, CNCF).">
+  <div class="slide-header"><span class="slide-num">12 / 50</span><h2>Linux CLI — why it matters for AWS</h2></div>
+  <div class="slide-body">
+    <div class="col">
+      <div class="card" style="margin-bottom:.55rem">
+        <h3>☁️ Linux in cloud &amp; DevOps</h3>
+        <ul style="padding-left:1.1rem;margin-top:.3rem">
+          <li>Most cloud VMs, containers &amp; serverless runtimes are <strong>Linux under the hood</strong></li>
+          <li>DevOps stack assumes Linux: Docker, Kubernetes, Jenkins, Terraform, Ansible</li>
+          <li>AWS default AMIs, SSH access &amp; cloud-init scripts are Linux-first</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <h3>🎓 Why IT students should learn Linux</h3>
+        <ul style="padding-left:1.1rem;margin-top:.3rem">
+          <li><strong>Industry standard</strong> — expected on cloud, DevOps &amp; backend job descriptions</li>
+          <li><strong>Certifications &amp; labs</strong> — AWS, LFCS, and today's EC2 lab all need CLI comfort</li>
+          <li><strong>Transferable</strong> — Android, embedded systems, HPC &amp; cybersecurity rely on Linux</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col">
+      <p style="font-size:var(--fs-xs);color:#666;margin-bottom:.25rem;text-align:center">Linux share in production (industry estimates)</p>
+      <div class="stat-pie-row">
+        <div class="stat-pie">
+          <svg viewBox="0 0 80 80" width="100%" height="72">
+            <circle cx="40" cy="40" r="32" fill="#e8e8e8"/>
+            <path d="M40,8 A32,32 0 1,1 12.5,58.5 Z" fill="#1B8700"/>
+            <circle cx="40" cy="40" r="18" fill="#fff"/>
+            <text x="40" y="44" text-anchor="middle" fill="#1B8700" font-size="12" font-weight="bold">96%</text>
+          </svg>
+          <div class="pie-label">Public web servers</div>
+          <div class="pie-legend"><span style="color:#1B8700">■</span> Linux &nbsp; <span style="color:#e8e8e8">■</span> Other</div>
+        </div>
+        <div class="stat-pie">
+          <svg viewBox="0 0 80 80" width="100%" height="72">
+            <circle cx="40" cy="40" r="32" fill="#e8e8e8"/>
+            <path d="M40,8 A32,32 0 1,1 8.2,52.8 Z" fill="#527FFF"/>
+            <circle cx="40" cy="40" r="18" fill="#fff"/>
+            <text x="40" y="44" text-anchor="middle" fill="#527FFF" font-size="12" font-weight="bold">90%</text>
+          </svg>
+          <div class="pie-label">Cloud workloads</div>
+          <div class="pie-legend"><span style="color:#527FFF">■</span> Linux &nbsp; <span style="color:#e8e8e8">■</span> Windows/other</div>
+        </div>
+        <div class="stat-pie">
+          <svg viewBox="0 0 80 80" width="100%" height="72">
+            <circle cx="40" cy="40" r="32" fill="#1B8700"/>
+            <circle cx="40" cy="40" r="18" fill="#fff"/>
+            <text x="40" y="44" text-anchor="middle" fill="#1B8700" font-size="11" font-weight="bold">100%</text>
+          </svg>
+          <div class="pie-label">Top 500 supercomputers</div>
+          <div class="pie-legend"><span style="color:#1B8700">■</span> Linux only</div>
+        </div>
+      </div>
+      <div class="cli-points">
+        <h3>⌨️ Why the CLI?</h3>
+        <ul style="padding-left:1.1rem">
+          <li><strong>Scriptable &amp; fast</strong> — automate repeat tasks; no clicking through consoles</li>
+          <li><strong>Same everywhere</strong> — laptop, EC2, CI/CD runner — one skill set</li>
+          <li><strong>Cloud-native tools</strong> — AWS CLI, <code>kubectl</code>, <code>docker</code>, <code>git</code> are terminal-first</li>
+        </ul>
+      </div>
+      <div class="diagram-box" style="min-height:120px;margin-top:.45rem;padding:.5rem">
+        <svg viewBox="0 0 300 56" width="100%" height="56">
+          <rect x="5" y="12" width="58" height="32" rx="4" fill="#527FFF"/><text x="34" y="32" text-anchor="middle" fill="#fff" font-size="12">Your laptop</text>
+          <text x="95" y="30" font-size="12" fill="#FF9900">SSH →</text>
+          <rect x="130" y="8" width="160" height="40" rx="4" fill="#232F3E"/><text x="210" y="26" text-anchor="middle" fill="#FF9900" font-size="12">EC2 — Amazon Linux 2023</text><text x="210" y="40" text-anchor="middle" fill="#aaa" font-size="11">today's lab</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 14 -->
+<section class="slide" data-notes="Live demo 3 min if time; else reference cheat sheet. Orange-highlighted commands are used in today's EC2 lab.">
+  <div class="slide-header"><span class="slide-num">13 / 50</span><h2>Linux CLI cheat sheet</h2></div>
+  <div class="slide-body single">
+    <div class="linux-cheat-grid">
+      <div class="cheat-block">
+        <h3>📁 Navigate</h3>
+        <ul class="cheat-cmds">
+          <li><code class="lab">pwd</code> <span>print working directory</span></li>
+          <li><code class="lab">cd dir</code> <span>change directory</span></li>
+          <li><code>cd ..</code> <span>go up one level</span></li>
+          <li><code>cd ~</code> <span>go home</span></li>
+          <li><code>cd -</code> <span>previous directory</span></li>
+          <li><code class="lab">ls -la</code> <span>list all (+ hidden)</span></li>
+          <li><code>ls -lh</code> <span>human-readable sizes</span></li>
+        </ul>
+      </div>
+      <div class="cheat-block">
+        <h3>📄 View &amp; edit</h3>
+        <ul class="cheat-cmds">
+          <li><code class="lab">cat file</code> <span>view entire file</span></li>
+          <li><code>less file</code> <span>page through file</span></li>
+          <li><code>head -n 20 file</code> <span>first N lines</span></li>
+          <li><code class="lab">tail -f log</code> <span>follow live log</span></li>
+          <li><code>nano file</code> <span>simple editor</span></li>
+          <li><code>vi file</code> <span>power editor (Esc :wq)</span></li>
+          <li><code>touch file</code> <span>create / update timestamp</span></li>
+        </ul>
+      </div>
+      <div class="cheat-block">
+        <h3>✏️ Manage files</h3>
+        <ul class="cheat-cmds">
+          <li><code>cp src dest</code> <span>copy file</span></li>
+          <li><code>cp -r dir dest</code> <span>copy folder</span></li>
+          <li><code>mv src dest</code> <span>move / rename</span></li>
+          <li><code>rm file</code> <span>delete file</span></li>
+          <li><code>rm -rf dir</code> <span>delete folder (careful!)</span></li>
+          <li><code>mkdir -p a/b/c</code> <span>create nested dirs</span></li>
+          <li><code>ln -s target link</code> <span>symbolic link</span></li>
+        </ul>
+      </div>
+      <div class="cheat-block">
+        <h3>🔍 Search &amp; filter</h3>
+        <ul class="cheat-cmds">
+          <li><code>grep "text" file</code> <span>search in file</span></li>
+          <li><code>grep -r "text" .</code> <span>search recursively</span></li>
+          <li><code>grep -i "text" file</code> <span>case-insensitive</span></li>
+          <li><code>find . -name "*.log"</code> <span>find by name</span></li>
+          <li><code>find . -type f -size +100M</code> <span>large files</span></li>
+          <li><code>which cmd</code> <span>path to command</span></li>
+          <li><code>history | grep ssh</code> <span>search history</span></li>
+        </ul>
+      </div>
+      <div class="cheat-block">
+        <h3>🌐 Network &amp; SSH</h3>
+        <ul class="cheat-cmds">
+          <li><code class="lab">ssh -i key.pem user@IP</code> <span>connect to EC2</span></li>
+          <li><code>scp -i key file user@IP:</code> <span>copy file over SSH</span></li>
+          <li><code class="lab">curl http://IP</code> <span>test HTTP response</span></li>
+          <li><code>curl -I URL</code> <span>headers only</span></li>
+          <li><code>ping -c 4 host</code> <span>test reachability</span></li>
+          <li><code class="lab">ss -tlnp</code> <span>open TCP ports</span></li>
+          <li><code>wget URL</code> <span>download file</span></li>
+        </ul>
+      </div>
+      <div class="cheat-block">
+        <h3>⚙️ System &amp; permissions</h3>
+        <ul class="cheat-cmds">
+          <li><code class="lab">sudo cmd</code> <span>run as admin</span></li>
+          <li><code class="lab">systemctl start nginx</code> <span>start a service</span></li>
+          <li><code>systemctl status svc</code> <span>check service</span></li>
+          <li><code>systemctl enable svc</code> <span>start on boot</span></li>
+          <li><code class="lab">chmod 400 key.pem</code> <span>lock down key file</span></li>
+          <li><code>chmod +x script.sh</code> <span>make executable</span></li>
+          <li><code>chown user:group file</code> <span>change owner</span></li>
+        </ul>
+      </div>
+      <div class="cheat-block">
+        <h3>📊 Disk &amp; memory</h3>
+        <ul class="cheat-cmds">
+          <li><code>df -h</code> <span>disk space summary</span></li>
+          <li><code>du -sh *</code> <span>folder sizes here</span></li>
+          <li><code>du -sh dir</code> <span>size of one folder</span></li>
+          <li><code>free -h</code> <span>RAM &amp; swap usage</span></li>
+          <li><code>lsblk</code> <span>block devices &amp; mounts</span></li>
+          <li><code>mount</code> <span>mounted filesystems</span></li>
+          <li><code>fdisk -l</code> <span>list partitions (sudo)</span></li>
+        </ul>
+      </div>
+      <div class="cheat-block">
+        <h3>🔄 Processes</h3>
+        <ul class="cheat-cmds">
+          <li><code>ps aux</code> <span>all running processes</span></li>
+          <li><code>top</code> <span>live process monitor</span></li>
+          <li><code>ps aux | grep nginx</code> <span>find a process</span></li>
+          <li><code>kill PID</code> <span>graceful stop</span></li>
+          <li><code>kill -9 PID</code> <span>force kill</span></li>
+          <li><code>jobs / bg / fg</code> <span>background jobs</span></li>
+          <li><code>nohup cmd &amp;</code> <span>survive logout</span></li>
+        </ul>
+      </div>
+      <div class="cheat-block">
+        <h3>🔗 Pipes, help &amp; misc</h3>
+        <ul class="cheat-cmds">
+          <li><code>cmd1 | cmd2</code> <span>pipe stdout</span></li>
+          <li><code>cmd &gt; file</code> <span>redirect to file</span></li>
+          <li><code>cmd &gt;&gt; file</code> <span>append to file</span></li>
+          <li><code>man cmd</code> <span>full manual page</span></li>
+          <li><code>cmd --help</code> <span>quick built-in help</span></li>
+          <li><code>whoami / id</code> <span>current user &amp; groups</span></li>
+          <li><code>uname -a</code> <span>kernel &amp; OS info</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="pill-row" style="margin-top:.4rem;justify-content:center">
+      <span class="pill">Today's lab</span>
+      <span class="pill blue">Navigate · SSH · curl · nginx</span>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 15 -->
+<section class="slide key-visual-slide" data-notes="Demo ssh -i key.pem ec2-user@IP. Run chmod 400 (Windows: Properties → Security). Show gitignore: *.pem, .aws/credentials. If a key leaks, rotate immediately.">
+  <div class="slide-header"><span class="slide-num">15 / 50</span><h2>File permissions &amp; keys</h2></div>
+  <div class="slide-body">
+    <div class="key-visual-grid">
+      <div class="key-visual-card connect">
+        <h3>🔐 Connect with your key</h3>
+        <svg viewBox="0 0 200 175" aria-label="SSH connection using a PEM key">
+          <defs><marker id="kv-arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#527FFF"/></marker></defs>
+          <rect x="4" y="8" width="52" height="44" rx="8" fill="#E8EEFF" stroke="#527FFF" stroke-width="1.5"/>
+          <text x="30" y="30" text-anchor="middle" font-size="18">💻</text>
+          <text x="30" y="44" text-anchor="middle" font-size="8" font-weight="600" fill="#232F3E">Laptop</text>
+          <rect x="74" y="14" width="52" height="32" rx="6" fill="#232F3E"/>
+          <text x="100" y="34" text-anchor="middle" font-size="16">🖥️</text>
+          <text x="100" y="48" text-anchor="middle" font-size="8" fill="#FF9900">EC2</text>
+          <rect x="62" y="62" width="76" height="26" rx="6" fill="#FFF3E0" stroke="#FF9900" stroke-width="1.5" stroke-dasharray="3 2"/>
+          <text x="100" y="79" text-anchor="middle" font-size="14">🔑</text>
+          <line x1="56" y1="30" x2="74" y2="30" stroke="#527FFF" stroke-width="2" marker-end="url(#kv-arr)"/>
+          <text x="65" y="24" font-size="7" fill="#888">SSH</text>
+          <rect x="8" y="100" width="184" height="22" rx="5" fill="#232F3E"/>
+          <text x="100" y="115" text-anchor="middle" fill="#FF9900" font-size="7.5" font-family="Consolas, monospace">ssh -i mykey.pem ec2-user@IP</text>
+          <circle cx="100" cy="148" r="10" fill="#1B8700"/>
+          <path d="M95 148 L99 152 L106 143" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          <text x="100" y="168" text-anchor="middle" font-size="8" font-weight="600" fill="#1B8700">Key matches → you're in!</text>
+        </svg>
+        <p class="key-caption">Your <code>.pem</code> proves identity — no password needed.</p>
+      </div>
+      <div class="key-visual-card perms">
+        <h3>🔒 Lock down the file</h3>
+        <svg viewBox="0 0 200 175" aria-label="PEM file permissions">
+          <rect x="55" y="6" width="90" height="52" rx="8" fill="#FFF3E0" stroke="#FF9900" stroke-width="2"/>
+          <text x="100" y="28" text-anchor="middle" font-size="18">📄</text>
+          <text x="100" y="44" text-anchor="middle" font-size="9" font-weight="700" fill="#232F3E">mykey.pem</text>
+          <text x="100" y="56" text-anchor="middle" font-size="14">🔐</text>
+          <rect x="8" y="68" width="56" height="40" rx="7" fill="#E8F5E6" stroke="#1B8700" stroke-width="1.5"/>
+          <text x="36" y="86" text-anchor="middle" font-size="14">👤</text>
+          <text x="36" y="100" text-anchor="middle" font-size="7" font-weight="600" fill="#1B8700">You ✓</text>
+          <rect x="72" y="68" width="56" height="40" rx="7" fill="#FDECEA" stroke="#D13212" stroke-width="1.5"/>
+          <text x="100" y="86" text-anchor="middle" font-size="14">👥</text>
+          <text x="100" y="100" text-anchor="middle" font-size="7" font-weight="600" fill="#D13212">Group ✗</text>
+          <rect x="136" y="68" width="56" height="40" rx="7" fill="#FDECEA" stroke="#D13212" stroke-width="1.5"/>
+          <text x="164" y="86" text-anchor="middle" font-size="14">🌍</text>
+          <text x="164" y="100" text-anchor="middle" font-size="7" font-weight="600" fill="#D13212">World ✗</text>
+          <rect x="20" y="118" width="160" height="20" rx="5" fill="#232F3E"/>
+          <text x="100" y="132" text-anchor="middle" fill="#FF9900" font-size="8" font-family="Consolas, monospace">chmod 400 mykey.pem</text>
+          <text x="100" y="152" text-anchor="middle" font-size="7.5" fill="#555">Windows: Properties → Security</text>
+          <text x="100" y="166" text-anchor="middle" font-size="7.5" fill="#D13212">SSH rejects keys that are too open</text>
+        </svg>
+        <p class="key-caption">Only <strong>you</strong> should read the key file.</p>
+      </div>
+      <div class="key-visual-card git-safe">
+        <h3>🚫 Keep keys out of Git</h3>
+        <svg viewBox="0 0 200 175" aria-label="Do not commit keys to Git">
+          <defs><marker id="kv-git" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#527FFF"/></marker></defs>
+          <rect x="6" y="12" width="48" height="40" rx="7" fill="#E8EEFF" stroke="#527FFF" stroke-width="1.5"/>
+          <text x="30" y="30" text-anchor="middle" font-size="16">💻</text>
+          <text x="30" y="44" text-anchor="middle" font-size="7" fill="#232F3E">project</text>
+          <rect x="62" y="18" width="36" height="28" rx="5" fill="#FFF3E0" stroke="#FF9900" stroke-width="1.5"/>
+          <text x="80" y="36" text-anchor="middle" font-size="12">🔑</text>
+          <line x1="98" y1="32" x2="118" y2="32" stroke="#527FFF" stroke-width="1.5" marker-end="url(#kv-git)"/>
+          <rect x="122" y="10" width="72" height="48" rx="7" fill="#232F3E"/>
+          <text x="158" y="30" text-anchor="middle" font-size="16">🐙</text>
+          <text x="158" y="46" text-anchor="middle" font-size="8" fill="#fff">GitHub</text>
+          <circle cx="108" cy="32" r="14" fill="#D13212"/>
+          <line x1="100" y1="24" x2="116" y2="40" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="116" y1="24" x2="100" y2="40" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+          <rect x="10" y="68" width="180" height="28" rx="6" fill="#E8F5E6" stroke="#1B8700" stroke-width="1.5"/>
+          <text x="100" y="80" text-anchor="middle" font-size="7" fill="#232F3E">.gitignore →</text>
+          <text x="100" y="91" text-anchor="middle" font-size="7.5" font-family="Consolas, monospace" fill="#1B8700">*.pem  ·  .aws/credentials</text>
+          <rect x="16" y="106" width="168" height="24" rx="5" fill="#FDECEA" stroke="#D13212" stroke-width="1.5"/>
+          <text x="100" y="122" text-anchor="middle" font-size="7" font-weight="600" fill="#D13212">Leaked key? Rotate immediately</text>
+          <text x="100" y="152" text-anchor="middle" font-size="14">🛡️</text>
+          <text x="100" y="168" text-anchor="middle" font-size="7.5" fill="#555">Repos can be public or forked</text>
+        </svg>
+        <p class="key-caption">Never <code>git add</code> secrets — treat leaks as compromised.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 16 -->
+<section class="slide" data-notes="No full Git lab — optional homework. Emphasize: commit locally, push to share, pull before you push, merge via PR.">
+  <div class="slide-header"><span class="slide-num">15 / 50</span><h2>Git in 60 seconds</h2></div>
+  <div class="slide-body">
+    <div class="col">
+      <ul>
+        <li><strong>Repository</strong> — project folder + full history</li>
+        <li><strong>Commit</strong> — save a snapshot locally (<code>git commit</code>)</li>
+        <li><strong>Push</strong> — upload your commits to the remote (<code>git push</code>)</li>
+        <li><strong>Pull</strong> — fetch &amp; merge remote changes down (<code>git pull</code>)</li>
+        <li><strong>Merge</strong> — combine branch histories (e.g. feature → main via PR)</li>
+        <li>Remote (GitHub/GitLab) = team source of truth; every <strong>push</strong> can trigger <strong>CI/CD</strong></li>
+      </ul>
+    </div>
+    <div class="col diagram-box" style="flex-direction:column;align-items:stretch;padding:.65rem">
+      <svg viewBox="0 0 340 195" width="100%" aria-label="Git branch lifecycle diagram">
+        <text x="8" y="14" fill="#888" font-size="12" font-weight="600">Project lifecycle — branches &amp; merges</text>
+        <!-- main branch -->
+        <text x="8" y="38" fill="#FF9900" font-size="12" font-weight="bold">main</text>
+        <line x1="40" y1="42" x2="320" y2="42" stroke="#232F3E" stroke-width="2.5"/>
+        <circle cx="55" cy="42" r="5" fill="#232F3E"/><text x="55" y="58" text-anchor="middle" fill="#666" font-size="11">init</text>
+        <circle cx="95" cy="42" r="5" fill="#232F3E"/>
+        <circle cx="135" cy="42" r="5" fill="#232F3E"/>
+        <circle cx="215" cy="42" r="5" fill="#1B8700" stroke="#1B8700" stroke-width="2"/><text x="215" y="58" text-anchor="middle" fill="#1B8700" font-size="11">merge</text>
+        <circle cx="255" cy="42" r="5" fill="#232F3E"/>
+        <circle cx="295" cy="42" r="5" fill="#232F3E"/><text x="295" y="58" text-anchor="middle" fill="#666" font-size="11">release</text>
+        <!-- feature branch -->
+        <text x="8" y="88" fill="#527FFF" font-size="12" font-weight="bold">feature/login</text>
+        <path d="M 95,42 C 95,65 115,78 135,88" fill="none" stroke="#527FFF" stroke-width="2"/>
+        <line x1="135" y1="88" x2="195" y2="88" stroke="#527FFF" stroke-width="2.5"/>
+        <circle cx="135" cy="88" r="5" fill="#527FFF"/>
+        <circle cx="165" cy="88" r="5" fill="#527FFF"/>
+        <circle cx="195" cy="88" r="5" fill="#527FFF"/>
+        <path d="M 195,88 C 205,75 210,55 215,42" fill="none" stroke="#527FFF" stroke-width="2"/>
+        <text x="165" y="102" text-anchor="middle" fill="#527FFF" font-size="11">commits</text>
+        <!-- hotfix branch -->
+        <text x="8" y="138" fill="#D13212" font-size="12" font-weight="bold">hotfix</text>
+        <path d="M 255,42 C 255,75 240,110 225,128" fill="none" stroke="#D13212" stroke-width="2"/>
+        <line x1="225" y1="128" x2="285" y2="128" stroke="#D13212" stroke-width="2.5"/>
+        <circle cx="225" cy="128" r="5" fill="#D13212"/>
+        <circle cx="255" cy="128" r="5" fill="#D13212"/>
+        <circle cx="285" cy="128" r="5" fill="#D13212"/>
+        <path d="M 285,128 C 300,95 300,60 295,42" fill="none" stroke="#D13212" stroke-width="2"/>
+        <text x="255" y="148" text-anchor="middle" fill="#D13212" font-size="11">urgent fix</text>
+        <!-- action labels -->
+        <rect x="55" y="162" width="52" height="18" rx="3" fill="#232F3E"/><text x="81" y="174" text-anchor="middle" fill="#fff" font-size="11">commit</text>
+        <rect x="118" y="162" width="42" height="18" rx="3" fill="#FF9900"/><text x="139" y="174" text-anchor="middle" fill="#232F3E" font-size="11">push</text>
+        <rect x="170" y="162" width="38" height="18" rx="3" fill="#527FFF"/><text x="189" y="174" text-anchor="middle" fill="#fff" font-size="11">pull</text>
+        <rect x="218" y="162" width="48" height="18" rx="3" fill="#1B8700"/><text x="242" y="174" text-anchor="middle" fill="#fff" font-size="11">merge</text>
+        <line x1="81" y1="162" x2="81" y2="50" stroke="#232F3E" stroke-width="1" stroke-dasharray="2,2" opacity=".5"/>
+        <line x1="139" y1="162" x2="295" y2="50" stroke="#FF9900" stroke-width="1" stroke-dasharray="2,2" opacity=".5"/>
+        <line x1="189" y1="162" x2="135" y2="50" stroke="#527FFF" stroke-width="1" stroke-dasharray="2,2" opacity=".5"/>
+        <line x1="242" y1="162" x2="215" y2="50" stroke="#1B8700" stroke-width="1" stroke-dasharray="2,2" opacity=".5"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 17 -->
+<section class="slide" data-notes="DevOps is culture + practices + tools. Walk the 8 lifecycle phases on the diagram — Monitor feeds back to Plan.">
+  <div class="slide-header"><span class="slide-num">16 / 50</span><h2>What is DevOps?</h2></div>
+  <div class="slide-body">
+    <div class="col">
+      <ul>
+        <li>Culture: dev + ops collaborate</li>
+        <li>Practices: automate, monitor, ship in small steps</li>
+        <li>Tools: Git, CI/CD, IaC, cloud (AWS)</li>
+        <li>Lifecycle: continuous loop — not a one-time handoff</li>
+        <li>Goal: <strong>faster, safer</strong> releases</li>
+      </ul>
+    </div>
+    <div class="col diagram-box devops-stack">
+      <div class="devops-diagram-wrap">
+      <svg viewBox="0 0 380 250" width="100%" aria-label="DevOps lifecycle infinity loop">
+        <defs>
+          <marker id="devops-flow" markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto">
+            <path d="M0,0 L7,3.5 L0,7 Z" fill="#FF9900"/>
+          </marker>
+        </defs>
+        <!-- two-lobe infinity (∞) — left Dev, right Ops -->
+        <path d="M 190,130 C 190,82 98,82 98,130 C 98,178 190,178 190,130"
+              fill="none" stroke="#527FFF" stroke-width="5" stroke-linecap="round"/>
+        <path d="M 190,130 C 190,82 282,82 282,130 C 282,178 190,178 190,130"
+              fill="none" stroke="#1B8700" stroke-width="5" stroke-linecap="round"/>
+        <text x="98" y="134" text-anchor="middle" font-size="14" fill="#527FFF" font-weight="bold">Dev</text>
+        <text x="282" y="134" text-anchor="middle" font-size="14" fill="#1B8700" font-weight="bold">Ops</text>
+        <!-- clockwise flow arrows -->
+        <path d="M 95,76 C 48,88 22,118 22,138" fill="none" stroke="#FF9900" stroke-width="1.8" marker-end="url(#devops-flow)"/>
+        <path d="M 22,158 C 38,188 68,204 97,198" fill="none" stroke="#FF9900" stroke-width="1.8" marker-end="url(#devops-flow)"/>
+        <path d="M 118,212 C 148,218 172,218 190,218" fill="none" stroke="#FF9900" stroke-width="1.8" marker-end="url(#devops-flow)"/>
+        <path d="M 218,218 C 248,218 278,210 303,198" fill="none" stroke="#FF9900" stroke-width="1.8" marker-end="url(#devops-flow)"/>
+        <path d="M 328,158 C 348,138 352,118 352,98" fill="none" stroke="#FF9900" stroke-width="1.8" marker-end="url(#devops-flow)"/>
+        <path d="M 338,78 C 310,58 270,44 230,44" fill="none" stroke="#FF9900" stroke-width="1.8" marker-end="url(#devops-flow)"/>
+        <path d="M 210,44 C 170,44 130,50 105,62" fill="none" stroke="#FF9900" stroke-width="1.8" marker-end="url(#devops-flow)"/>
+        <!-- phase nodes — clockwise: Plan → Code → Build → Test → Release → Deploy → Operate → Monitor -->
+        <g>
+          <rect x="71" y="54" width="48" height="20" rx="10" fill="#527FFF"/>
+          <text x="95" y="68" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Plan</text>
+        </g>
+        <g>
+          <rect x="4" y="118" width="48" height="20" rx="10" fill="#527FFF"/>
+          <text x="28" y="132" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Code</text>
+        </g>
+        <g>
+          <rect x="71" y="188" width="52" height="20" rx="10" fill="#527FFF"/>
+          <text x="97" y="202" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Build</text>
+        </g>
+        <g>
+          <rect x="166" y="208" width="48" height="20" rx="10" fill="#527FFF"/>
+          <text x="190" y="222" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Test</text>
+        </g>
+        <g>
+          <rect x="247" y="188" width="56" height="20" rx="10" fill="#1B8700"/>
+          <text x="275" y="202" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Release</text>
+        </g>
+        <g>
+          <rect x="328" y="118" width="48" height="20" rx="10" fill="#1B8700"/>
+          <text x="352" y="132" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Deploy</text>
+        </g>
+        <g>
+          <rect x="259" y="54" width="60" height="20" rx="10" fill="#1B8700"/>
+          <text x="289" y="68" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Operate</text>
+        </g>
+        <g>
+          <rect x="162" y="34" width="56" height="20" rx="10" fill="#1B8700"/>
+          <text x="190" y="48" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Monitor</text>
+        </g>
+        <text x="190" y="242" text-anchor="middle" fill="#666" font-size="10">Monitor → Plan closes the loop</text>
+      </svg>
+      </div>
+      <div class="devops-ref-wrap">
+      <img class="devops-ref-image"
+           src="https://uploads-ssl.webflow.com/628ea50806d12b349bebc1ea/63054a061b89e388e49cbc73_DevOps.webp"
+           alt="DevOps lifecycle — infinity loop with Plan, Code, Build, Test, Release, Deploy, Operate, Monitor and supporting practices"
+           loading="lazy">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 18 -->
+<section class="slide" data-notes="Least privilege is the golden rule.">
+  <div class="slide-header"><span class="slide-num">17 / 50</span><h2>IAM: who can do what?</h2></div>
+  <div class="slide-body">
+    <div class="col">
+      <ul>
+        <li><strong>Root account</strong> — billing; <strong>do not use daily</strong></li>
+        <li><strong>IAM user</strong> — person or app identity</li>
+        <li><strong>IAM group</strong> — collection of users</li>
+        <li><strong>IAM policy</strong> — JSON permissions</li>
+        <li><strong>IAM role</strong> — temporary creds (EC2, Lambda)</li>
+      </ul>
+    </div>
+    <div class="col diagram-box">
+      <svg viewBox="0 0 280 140" width="100%">
+        <rect x="10" y="50" width="60" height="30" rx="4" fill="#527FFF"/><text x="40" y="70" text-anchor="middle" fill="#fff" font-size="12">User/Role</text>
+        <rect x="110" y="50" width="60" height="30" rx="4" fill="#FF9900"/><text x="140" y="70" text-anchor="middle" fill="#232F3E" font-size="12" font-weight="bold">Policy</text>
+        <rect x="210" y="50" width="60" height="30" rx="4" fill="#232F3E"/><text x="240" y="70" text-anchor="middle" fill="#fff" font-size="12">AWS API</text>
+        <line x1="70" y1="65" x2="110" y2="65" stroke="#333" stroke-width="2"/><line x1="170" y1="65" x2="210" y2="65" stroke="#333" stroke-width="2"/>
+        <text x="140" y="110" text-anchor="middle" font-size="12" fill="#1B8700">Allow / Deny evaluation</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 19 -->
+<section class="slide" data-notes="Point to lab-assets/lab-0-verify-identity/iam-lab-policy.json">
+  <div class="slide-header"><span class="slide-num">18 / 50</span><h2>Policy language — one example</h2></div>
+  <div class="slide-body single">
+    <pre>{
+  "Effect": "Allow",
+  "Action": ["s3:PutObject"],
+  "Resource": "arn:aws:s3:::aws-club-mybucket/*"
+}</pre>
+    <ul style="margin-top:.75rem">
+      <li><strong>Least privilege:</strong> only permissions you need</li>
+      <li>Deny wins over Allow in conflicts</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 20 -->
+<section class="slide" data-notes="CloudShell if no local CLI installed.">
+  <div class="slide-header"><span class="slide-num">19 / 50</span><h2>Console vs AWS CLI</h2></div>
+  <div class="slide-body single">
+    <table>
+      <tr><th></th><th>AWS Console</th><th>AWS CLI</th></tr>
+      <tr><td>Best for</td><td>Learning, exploring</td><td>Automation, scripts</td></tr>
+      <tr><td>Auth</td><td>Browser login</td><td>Access keys or SSO</td></tr>
+      <tr><td>Same API?</td><td colspan="2" style="text-align:center"><strong>Yes</strong></td></tr>
+    </table>
+    <p style="margin-top:.75rem"><strong>CloudShell</strong> — browser terminal with CLI pre-installed</p>
+  </div>
+</section>
+
+<!-- SLIDE 21 -->
+<section class="slide" data-notes="Lab 0 identity check in lab guide.">
+  <div class="slide-header"><span class="slide-num">20 / 50</span><h2>Install &amp; configure AWS CLI <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-body single">
+    <ol>
+      <li>Install AWS CLI v2 (Windows MSI / Mac pkg / Linux curl)</li>
+      <li><code>aws configure</code> → Access Key, Secret, Region, <code>json</code></li>
+      <li>Verify:</li>
+    </ol>
+    <pre>aws sts get-caller-identity
+aws s3 ls</pre>
+  </div>
+</section>
+
+<!-- SLIDE 22 -->
+<section class="slide" data-notes="Lab A starts next. Object storage = flat store of files accessed by key, not folders on a disk. Bucket names are globally unique.">
+  <div class="slide-header"><span class="slide-num">21 / 50</span><h2>Amazon S3 — What is it? <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-body single">
+    <div class="s3-hero">
+      <img class="s3-hero-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Storage/64/Arch_Amazon-Simple-Storage-Service_64.svg" alt="Amazon S3" loading="lazy">
+      <div class="s3-hero-text">
+        <p><strong>Amazon S3</strong> (Simple Storage Service) is AWS's managed <strong>object storage</strong> service — store and retrieve any amount of data from anywhere on the web.</p>
+        <p><strong>Object storage</strong> treats data as discrete <em>objects</em> (file + metadata), not blocks on a disk or rows in a table. Each object lives in a <strong>bucket</strong> and is accessed by a unique <strong>key</strong> (its path/name).</p>
+      </div>
+    </div>
+    <div class="two-col-grid">
+      <div class="card">
+        <h3>How object storage works</h3>
+        <ul style="padding-left:1.1rem;margin-top:.35rem">
+          <li>Upload a file → stored as an <strong>object</strong></li>
+          <li>Flat namespace — keys like <code>photos/2025/cat.jpg</code></li>
+          <li>HTTP/HTTPS API access — Console, CLI, SDKs</li>
+          <li><strong>99.999999999%</strong> (11 nines) durability</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <h3>Not a filesystem</h3>
+        <ul style="padding-left:1.1rem;margin-top:.35rem">
+          <li>No true folders — <code>/</code> in keys is a naming convention</li>
+          <li>Not mounted like <code>C:\</code> or <code>/home</code></li>
+          <li>Optimized for <strong>scale, durability &amp; cheap storage</strong></li>
+          <li>Ideal for files you read/write whole — not databases</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 22b — S3 vs local & network storage -->
+<section class="slide" data-notes="Contrast: laptop disk is fast but local; NAS is shared but on-prem; S3 is cloud-native, durable, API-driven.">
+  <div class="slide-header"><span class="slide-num">22 / 50</span><h2>Amazon S3 — vs local &amp; network storage</h2></div>
+  <div class="slide-body single">
+    <table class="storage-compare">
+      <tr>
+        <th></th>
+        <th>Local disk</th>
+        <th>Network storage (NAS / file server)</th>
+        <th>Amazon S3</th>
+      </tr>
+      <tr>
+        <td>Where</td>
+        <td>Inside your PC or EC2 instance</td>
+        <td>Shared drive on office LAN</td>
+        <td>AWS cloud — region you choose</td>
+      </tr>
+      <tr>
+        <td>Access</td>
+        <td>One machine only</td>
+        <td>Mount as network drive (<code>\\server\share</code>)</td>
+        <td>API / Console / CLI from anywhere</td>
+      </tr>
+      <tr>
+        <td>Scale</td>
+        <td>Fixed disk size (256 GB, 1 TB…)</td>
+        <td>Limited by NAS hardware</td>
+        <td>Virtually unlimited objects</td>
+      </tr>
+      <tr>
+        <td>Durability</td>
+        <td>Disk failure can lose data</td>
+        <td>RAID helps; still one location</td>
+        <td>Replicated across multiple facilities</td>
+      </tr>
+      <tr>
+        <td>Cost</td>
+        <td>Buy hardware upfront</td>
+        <td>Buy NAS + maintain it</td>
+        <td>Pay per GB stored + requests</td>
+      </tr>
+      <tr>
+        <td>Best for</td>
+        <td>OS, apps, temp processing</td>
+        <td>Office documents, team shares</td>
+        <td>Backups, web assets, data lakes, archives</td>
+      </tr>
+    </table>
+    <p style="margin-top:.65rem;font-size:var(--fs-sm);color:#555"><img class="aws-svc-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Storage/64/Arch_Amazon-Simple-Storage-Service_64.svg" alt="" style="vertical-align:middle;margin-right:.35rem" loading="lazy"><strong>Rule of thumb:</strong> use local/EBS for running apps; use S3 for files you want durable, shared, and internet-accessible.</p>
+  </div>
+</section>
+
+<!-- SLIDE 22c — Key terminology -->
+<section class="slide" data-notes="Students will use bucket, key, and object in Lab A. Region matters for latency and compliance.">
+  <div class="slide-header"><span class="slide-num">23 / 50</span><h2>Amazon S3 — key terminology</h2></div>
+  <div class="slide-body">
+    <div class="col term-grid">
+      <div class="term-item"><strong>Bucket</strong><span>Container for objects. Name is <strong>globally unique</strong> across all AWS accounts.</span></div>
+      <div class="term-item"><strong>Object</strong><span>A file + metadata. Can be 0 bytes up to 5 TB in size.</span></div>
+      <div class="term-item"><strong>Key</strong><span>Full path/name of an object, e.g. <code>images/logo.png</code>. Looks like a folder path but isn't a real directory.</span></div>
+      <div class="term-item"><strong>Region</strong><span>Geographic location where the bucket lives (e.g. <code>eu-central-1</code>). Choose close to users.</span></div>
+      <div class="term-item"><strong>Versioning</strong><span>Keep multiple versions of an object — recover from accidental overwrites or deletes.</span></div>
+      <div class="term-item"><strong>Storage class</strong><span>Cost/retrieval tier — Standard, Infrequent Access (IA), Glacier for archives.</span></div>
+      <div class="term-item"><strong>Block Public Access</strong><span>Account/bucket setting that prevents accidental public exposure (on by default).</span></div>
+      <div class="term-item"><strong>ARN</strong><span>Amazon Resource Name — unique ID used in IAM policies, e.g. <code>arn:aws:s3:::my-bucket/*</code></span></div>
+    </div>
+    <div class="col diagram-box" style="flex-direction:column;min-width:200px;max-width:220px">
+      <img class="s3-hero-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Storage/64/Arch_Amazon-Simple-Storage-Service_64.svg" alt="S3" loading="lazy">
+      <pre style="margin-top:.75rem;font-size:var(--fs-code);width:100%">s3://my-bucket/
+  └── images/logo.png
+       ↑ bucket  ↑ key</pre>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 22d — Use cases -->
+<section class="slide" data-notes="Today's lab: static site upload. Mention data lakes and backups as real-world examples.">
+  <div class="slide-header"><span class="slide-num">24 / 50</span><h2>Amazon S3 — common use cases</h2></div>
+  <div class="slide-body single">
+    <div class="usecase-grid">
+      <div class="usecase-card">
+        <img src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Storage/64/Arch_Amazon-Simple-Storage-Service_64.svg" alt="" loading="lazy">
+        <div><strong>Static website hosting</strong><span>Host HTML, CSS, JS — today's Lab A uploads <code>index.html</code></span></div>
+      </div>
+      <div class="usecase-card">
+        <img src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Storage/64/Arch_Amazon-Simple-Storage-Service_64.svg" alt="" loading="lazy">
+        <div><strong>Backups &amp; archives</strong><span>Database dumps, snapshots, long-term Glacier storage</span></div>
+      </div>
+      <div class="usecase-card">
+        <img src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Storage/64/Arch_Amazon-Simple-Storage-Service_64.svg" alt="" loading="lazy">
+        <div><strong>Data lakes</strong><span>Store logs, CSV, JSON, Parquet for analytics &amp; ML pipelines</span></div>
+      </div>
+      <div class="usecase-card">
+        <img src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Networking-Content-Delivery/64/Arch_Amazon-CloudFront_64.svg" alt="" loading="lazy">
+        <div><strong>Media &amp; CDN origin</strong><span>Videos, images served via CloudFront edge locations</span></div>
+      </div>
+      <div class="usecase-card">
+        <img src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Storage/64/Arch_Amazon-Simple-Storage-Service_64.svg" alt="" loading="lazy">
+        <div><strong>Application uploads</strong><span>User profile photos, documents, mobile app assets</span></div>
+      </div>
+      <div class="usecase-card">
+        <img src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Storage/64/Arch_AWS-Backup_64.svg" alt="" loading="lazy">
+        <div><strong>Disaster recovery</strong><span>Cross-region replication for business continuity</span></div>
+      </div>
+    </div>
+    <div class="pill-row" style="margin-top:.85rem">
+      <span class="pill">Lab A today</span>
+      <span class="pill blue">Console upload</span>
+      <span class="pill green">CLI: aws s3 cp</span>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 23 -->
+<section class="slide" data-notes="Block public access is on by default — good!">
+  <div class="slide-header"><span class="slide-num">25 / 50</span><h2>Amazon S3 — key concepts</h2></div>
+  <div class="slide-body single">
+    <ul>
+      <li>Default: <strong>block public access</strong> (good!)</li>
+      <li>Versioning — recover from accidental overwrite</li>
+      <li>Lifecycle rules — auto-move objects between classes</li>
+      <li>Console upload vs <code>aws s3 cp</code></li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 23b — S3 storage classes -->
+<section class="slide" data-notes="Pick class by access pattern, not gut feel. Lab A uses Standard. Lifecycle policies auto-transition objects. IA and Glacier have retrieval fees and minimum storage duration.">
+  <div class="slide-header"><span class="slide-num">26 / 50</span><h2>Amazon S3 — storage classes</h2></div>
+  <div class="slide-body">
+    <div class="col">
+      <p style="margin-bottom:.65rem;font-size:var(--fs-sm)">Same bucket, same API — different <strong>cost vs access speed</strong> trade-offs.</p>
+      <table>
+        <tr><th>Class</th><th>Access pattern</th><th>Storage cost</th></tr>
+        <tr><td><strong>Standard</strong></td><td>Frequent reads/writes</td><td>Baseline</td></tr>
+        <tr><td><strong>Standard-IA</strong></td><td>Monthly or less</td><td>Lower</td></tr>
+        <tr><td><strong>Glacier</strong></td><td>Archive / compliance</td><td>Lowest</td></tr>
+      </table>
+      <ul style="margin-top:.65rem;font-size:var(--fs-sm)">
+        <li><strong>Lifecycle rules</strong> move objects automatically (e.g. logs → IA after 30 days)</li>
+        <li>IA &amp; Glacier: retrieval fees + minimum storage duration</li>
+      </ul>
+    </div>
+    <div class="col diagram-box">
+      <svg viewBox="0 0 420 240" width="100%" aria-label="S3 storage class spectrum: frequent access on the left, archive on the right; storage cost decreases and retrieval time increases left to right">
+        <defs>
+          <marker id="s3-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#888"/>
+          </marker>
+        </defs>
+        <text x="210" y="18" text-anchor="middle" font-size="11" fill="#555" font-weight="600">Storage cost decreases →</text>
+        <line x1="40" y1="24" x2="380" y2="24" stroke="#888" stroke-width="1.5" marker-end="url(#s3-arrow)"/>
+        <rect x="30" y="42" width="110" height="72" rx="8" fill="#FF9900"/>
+        <text x="85" y="68" text-anchor="middle" fill="#232F3E" font-size="12" font-weight="bold">Standard</text>
+        <text x="85" y="86" text-anchor="middle" fill="#232F3E" font-size="10">Hot · frequent</text>
+        <text x="85" y="102" text-anchor="middle" fill="#232F3E" font-size="10">Lab A default</text>
+        <rect x="155" y="58" width="110" height="58" rx="8" fill="#527FFF"/>
+        <text x="210" y="82" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">Standard-IA</text>
+        <text x="210" y="100" text-anchor="middle" fill="#fff" font-size="10">Warm · monthly</text>
+        <rect x="280" y="74" width="110" height="42" rx="8" fill="#232F3E"/>
+        <text x="335" y="94" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">Glacier</text>
+        <text x="335" y="108" text-anchor="middle" fill="#ccc" font-size="10">Cold · archive</text>
+        <path d="M85 118 L210 122 L335 118" fill="none" stroke="#FF9900" stroke-width="2" stroke-dasharray="5 3"/>
+        <text x="85" y="138" text-anchor="middle" font-size="10" fill="#1B8700">ms access</text>
+        <text x="210" y="138" text-anchor="middle" font-size="10" fill="#527FFF">minutes</text>
+        <text x="335" y="138" text-anchor="middle" font-size="10" fill="#888">hours–days</text>
+        <line x1="40" y1="158" x2="380" y2="158" stroke="#888" stroke-width="1.5" marker-end="url(#s3-arrow)"/>
+        <text x="210" y="176" text-anchor="middle" font-size="11" fill="#555" font-weight="600">Retrieval time increases →</text>
+        <rect x="55" y="192" width="310" height="38" rx="6" fill="#fff" stroke="#ddd" stroke-width="1"/>
+        <text x="210" y="210" text-anchor="middle" font-size="10" fill="#555">Lifecycle: Standard</text>
+        <text x="248" y="210" font-size="10" fill="#888">→</text>
+        <text x="268" y="210" font-size="10" fill="#527FFF">IA @ 30d</text>
+        <text x="318" y="210" font-size="10" fill="#888">→</text>
+        <text x="338" y="210" font-size="10" fill="#232F3E">Glacier @ 90d</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 24 -->
+<section class="slide" data-notes="See lab-guide-step-by-step.md Lab A">
+  <div class="slide-header"><span class="slide-num">27 / 50</span><h2>Lab A — S3 checklist <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-body single">
+    <ul class="checklist">
+      <li>Create bucket <code>aws-club-&lt;initials&gt;-&lt;date&gt;</code></li>
+      <li>Upload <code>index.html</code></li>
+      <li>CLI: <code>aws s3 cp</code> and <code>aws s3 ls</code></li>
+      <li>Enable versioning</li>
+      <li>Screenshot → shared doc</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 25 -->
+<section class="slide break-slide" data-notes="10 min break before EC2 lab">
+  <h1>☕ Break</h1>
+  <p>10 minutes &nbsp;|&nbsp; Clock: 2:15</p>
+</section>
+
+<!-- SLIDE 26 -->
+<section class="slide" data-notes="EC2 = Elastic Compute Cloud, AWS core IaaS. An instance is one running VM — like renting a computer by the hour. Walk the diagram: Region contains AZs; VPC is your private network with a CIDR block; subnets are IP slices inside one AZ; security groups wrap each instance. Lab B creates a custom VPC + public subnet + t3.micro. t3.micro is free tier eligible.">
+  <div class="slide-header"><span class="slide-num">28 / 50</span><h2>Amazon EC2 — virtual servers &amp; networking</h2></div>
+  <div class="slide-body">
+    <div class="col diagram-box">
+      <svg viewBox="0 0 520 300" width="100%">
+        <!-- Region -->
+        <rect x="8" y="8" width="504" height="284" rx="10" fill="none" stroke="#888" stroke-width="1.5" stroke-dasharray="8,4"/>
+        <text x="18" y="26" font-size="11" fill="#666" font-weight="600">Region (e.g. eu-central-1)</text>
+
+        <!-- VPC -->
+        <rect x="24" y="38" width="472" height="244" rx="8" fill="none" stroke="#FF9900" stroke-width="2"/>
+        <text x="34" y="56" font-size="11" fill="#FF9900" font-weight="700">VPC</text>
+        <text x="70" y="56" font-size="10" fill="#FF9900">CIDR 10.0.0.0/16 — your private IP address space</text>
+
+        <!-- Internet / IGW -->
+        <ellipse cx="260" cy="18" rx="42" ry="14" fill="#527FFF" opacity=".25" stroke="#527FFF"/>
+        <text x="260" y="22" text-anchor="middle" font-size="9" fill="#232F3E" font-weight="600">Internet</text>
+        <rect x="230" y="62" width="60" height="22" rx="4" fill="#FF9900"/>
+        <text x="260" y="77" text-anchor="middle" font-size="9" fill="#232F3E" font-weight="bold">IGW</text>
+        <line x1="260" y1="36" x2="260" y2="62" stroke="#527FFF" stroke-width="1.5"/>
+        <line x1="260" y1="84" x2="130" y2="108" stroke="#333" stroke-width="1.5"/>
+
+        <!-- AZ-a -->
+        <rect x="40" y="92" width="200" height="178" rx="6" fill="#f8f8f8" stroke="#ccc" stroke-width="1"/>
+        <text x="50" y="108" font-size="10" fill="#555" font-weight="600">Availability Zone A</text>
+
+        <!-- Public subnet -->
+        <rect x="52" y="118" width="176" height="68" rx="4" fill="#527FFF" opacity=".18" stroke="#527FFF" stroke-width="1.5"/>
+        <text x="60" y="132" font-size="9" fill="#527FFF" font-weight="600">Public Subnet</text>
+        <text x="60" y="144" font-size="8.5" fill="#527FFF">10.0.1.0/24 — route to IGW</text>
+        <rect x="68" y="152" width="72" height="26" rx="4" fill="#232F3E"/>
+        <text x="104" y="169" text-anchor="middle" font-size="9" fill="#fff">EC2 Instance</text>
+        <text x="158" y="163" font-size="8" fill="#1B8700">Public IP</text>
+        <rect x="60" y="148" width="84" height="34" rx="6" fill="none" stroke="#D13212" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <text x="148" y="178" font-size="7.5" fill="#D13212">Security Group</text>
+
+        <!-- AZ-b -->
+        <rect x="280" y="92" width="200" height="178" rx="6" fill="#f8f8f8" stroke="#ccc" stroke-width="1"/>
+        <text x="290" y="108" font-size="10" fill="#555" font-weight="600">Availability Zone B</text>
+
+        <!-- Private subnet -->
+        <rect x="292" y="118" width="176" height="68" rx="4" fill="#232F3E" opacity=".12" stroke="#232F3E" stroke-width="1.5"/>
+        <text x="300" y="132" font-size="9" fill="#232F3E" font-weight="600">Private Subnet</text>
+        <text x="300" y="144" font-size="8.5" fill="#555">10.0.2.0/24 — no direct internet</text>
+        <rect x="308" y="152" width="72" height="26" rx="4" fill="#232F3E"/>
+        <text x="344" y="169" text-anchor="middle" font-size="9" fill="#fff">EC2 / RDS</text>
+        <rect x="300" y="148" width="84" height="34" rx="6" fill="none" stroke="#D13212" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+        <!-- EC2 components legend -->
+        <rect x="52" y="200" width="416" height="58" rx="6" fill="#fff" stroke="#ddd"/>
+        <text x="62" y="216" font-size="9" fill="#232F3E" font-weight="700">EC2 launch ingredients</text>
+        <rect x="62" y="224" width="44" height="18" rx="3" fill="#FF9900" opacity=".3" stroke="#FF9900"/><text x="84" y="237" text-anchor="middle" font-size="8" fill="#232F3E">AMI</text>
+        <rect x="114" y="224" width="56" height="18" rx="3" fill="#FF9900" opacity=".3" stroke="#FF9900"/><text x="142" y="237" text-anchor="middle" font-size="8" fill="#232F3E">t3.micro</text>
+        <rect x="178" y="224" width="48" height="18" rx="3" fill="#FF9900" opacity=".3" stroke="#FF9900"/><text x="202" y="237" text-anchor="middle" font-size="8" fill="#232F3E">Key pair</text>
+        <rect x="234" y="224" width="40" height="18" rx="3" fill="#FF9900" opacity=".3" stroke="#FF9900"/><text x="254" y="237" text-anchor="middle" font-size="8" fill="#232F3E">EBS</text>
+        <rect x="282" y="224" width="72" height="18" rx="3" fill="#D13212" opacity=".15" stroke="#D13212"/><text x="318" y="237" text-anchor="middle" font-size="8" fill="#232F3E">Security Group</text>
+        <rect x="362" y="224" width="56" height="18" rx="3" fill="#527FFF" opacity=".2" stroke="#527FFF"/><text x="390" y="237" text-anchor="middle" font-size="8" fill="#232F3E">Subnet</text>
+        <text x="62" y="252" font-size="8" fill="#666">Instance = one running VM · you manage OS, patches &amp; apps (IaaS)</text>
+      </svg>
+    </div>
+    <div class="col" style="font-size:var(--fs-sm)">
+      <div class="card" style="margin-bottom:.5rem;padding:.65rem .85rem">
+        <h3 style="font-size:1rem;margin-bottom:.25rem">What is EC2?</h3>
+        <p style="line-height:1.4;margin:0"><strong>Elastic Compute Cloud</strong> — AWS's core <strong>IaaS</strong> service. Rent virtual machines (servers) on demand; scale up or down in minutes.</p>
+      </div>
+      <ul style="margin-bottom:.45rem">
+        <li><strong>Instance</strong> — one running VM built from an AMI + instance type; has CPU, RAM, disk &amp; a network interface</li>
+        <li><strong>AMI</strong> — OS image template (today: Amazon Linux 2023)</li>
+        <li><strong>Instance type</strong> — hardware profile; lab uses <code>t3.micro</code> (2 vCPU, 1 GiB RAM)</li>
+        <li><strong>Key pair</strong> — <code>.pem</code> file for SSH; <strong>EBS</strong> — persistent disk attached to the instance</li>
+      </ul>
+      <div class="card blue" style="padding:.65rem .85rem">
+        <h3 style="font-size:1rem;margin-bottom:.25rem">Where instances live (VPC)</h3>
+        <ul style="padding-left:1.1rem;margin-top:.2rem">
+          <li><strong>CIDR</strong> — IP range notation; VPC <code>10.0.0.0/16</code> = 65,536 private addresses</li>
+          <li><strong>Availability Zone (AZ)</strong> — isolated datacenter; subnets exist in exactly one AZ</li>
+          <li><strong>Subnet</strong> — slice of VPC CIDR (e.g. <code>10.0.1.0/24</code>); public subnets route to Internet Gateway</li>
+          <li><strong>Security group</strong> — stateful virtual firewall on the instance; controls inbound/outbound traffic</li>
+        </ul>
+      </div>
+      <p style="margin-top:.4rem;font-size:var(--fs-xs);color:#555">Today's lab: create your own VPC + public subnet, launch EC2 with public IP for SSH &amp; HTTP. Production often adds private subnets + ALB.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 27 -->
+<section class="slide" data-notes="Never SSH from 0.0.0.0/0 in production">
+  <div class="slide-header"><span class="slide-num">29 / 50</span><h2>Security groups (firewall rules)</h2></div>
+  <div class="slide-body single">
+    <table>
+      <tr><th>Port</th><th>Protocol</th><th>Source</th><th>Purpose</th></tr>
+      <tr><td>22</td><td>TCP</td><td>My IP</td><td>SSH admin</td></tr>
+      <tr><td>80</td><td>TCP</td><td>0.0.0.0/0</td><td>HTTP demo only</td></tr>
+    </table>
+    <ul style="margin-top:.75rem">
+      <li>Stateful: return traffic allowed automatically</li>
+      <li>Production: no open SSH from <code>0.0.0.0/0</code></li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 28 -->
+<section class="slide" data-notes="Walk VPC wizard or manual steps. Students name resources with aws-club-initials. Asset: lab-assets/lab-b-ec2/index.html">
+  <div class="slide-header"><span class="slide-num">30 / 51</span><h2>Lab B — Part 1: VPC &amp; EC2 <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-body">
+    <div class="col diagram-box">
+      <svg viewBox="0 0 320 180" width="100%">
+        <rect x="20" y="30" width="280" height="130" rx="8" fill="none" stroke="#FF9900" stroke-width="2"/><text x="30" y="50" font-size="11" fill="#FF9900">VPC 10.0.0.0/16</text>
+        <rect x="40" y="60" width="100" height="80" rx="4" fill="#527FFF" opacity=".3" stroke="#527FFF"/><text x="90" y="95" text-anchor="middle" font-size="12">Public Subnet</text><text x="90" y="110" text-anchor="middle" font-size="11">10.0.1.0/24</text>
+        <rect x="180" y="60" width="100" height="80" rx="4" fill="#232F3E" opacity=".2" stroke="#232F3E"/><text x="230" y="95" text-anchor="middle" font-size="12">Private Subnet</text><text x="230" y="110" text-anchor="middle" font-size="11">(Lab D / prod)</text>
+        <rect x="130" y="10" width="60" height="25" rx="4" fill="#FF9900"/><text x="160" y="27" text-anchor="middle" font-size="12" font-weight="bold">IGW</text>
+        <line x1="160" y1="35" x2="90" y2="60" stroke="#333" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="col" style="font-size:var(--fs-sm)">
+      <ol style="padding-left:1.15rem;line-height:1.45">
+        <li><strong>VPC</strong> → Create → name <code>aws-club-&lt;initials&gt;-vpc</code>, IPv4 <code>10.0.0.0/16</code></li>
+        <li><strong>Internet gateway</strong> → Create → attach to your VPC</li>
+        <li><strong>Subnet</strong> → public, <code>10.0.1.0/24</code>, one AZ, enable <strong>auto-assign public IPv4</strong></li>
+        <li><strong>Route table</strong> → route <code>0.0.0.0/0</code> → IGW; associate public subnet</li>
+        <li><strong>Key pair</strong> → create <code>aws-club-&lt;initials&gt;-key.pem</code> (chmod 400 / icacls on Windows)</li>
+        <li><strong>Security group</strong> in your VPC: SSH 22 from <strong>My IP</strong>, HTTP 80 from <code>0.0.0.0/0</code></li>
+        <li><strong>Launch instance</strong> <code>aws-club-&lt;initials&gt;-web1</code> — Amazon Linux 2023, <code>t3.micro</code>, your VPC + public subnet + SG</li>
+      </ol>
+      <p style="margin-top:.4rem;font-size:var(--fs-xs);color:#555">Record <strong>Public IPv4</strong> and <strong>Instance ID</strong> before Part 2.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 29 -->
+<section class="slide" data-notes="Assets: lab-assets/lab-b-ec2/index.html and nginx-lab-snippet.conf. sub_filter fills IP and hostname per machine — same file works on web2 in Lab C.">
+  <div class="slide-header"><span class="slide-num">31 / 51</span><h2>Lab B — Part 2: SSH &amp; web server <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-body single" style="font-size:var(--fs-sm)">
+    <div class="two-col-grid" style="gap:.75rem">
+      <div>
+        <h3 style="font-size:.95rem;margin-bottom:.35rem">Connect (SSH)</h3>
+        <p style="font-size:var(--fs-xs);margin-bottom:.35rem">Mac/Linux:</p>
+        <pre style="font-size:.72rem;margin-bottom:.5rem">chmod 400 ~/.ssh/aws-club-xx-key.pem
+ssh -i ~/.ssh/aws-club-xx-key.pem ec2-user@PUBLIC_IP</pre>
+        <p style="font-size:var(--fs-xs);margin-bottom:.35rem">Windows (PowerShell):</p>
+        <pre style="font-size:.72rem;margin-bottom:.5rem">icacls "$env:USERPROFILE\Downloads\aws-club-xx-key.pem" /inheritance:r
+icacls "$env:USERPROFILE\Downloads\aws-club-xx-key.pem" /grant:r "$env:USERNAME:R"
+ssh -i $env:USERPROFILE\Downloads\aws-club-xx-key.pem ec2-user@PUBLIC_IP</pre>
+        <p style="font-size:var(--fs-xs);color:#555">Type <code>yes</code> on first connect. Prompt: <code>[ec2-user@ip-10-0-1-xx ~]$</code></p>
+      </div>
+      <div>
+        <h3 style="font-size:.95rem;margin-bottom:.35rem">Deploy nginx + welcome page</h3>
+        <p style="font-size:var(--fs-xs);margin-bottom:.25rem"><strong>On EC2:</strong></p>
+        <pre style="font-size:.72rem;margin-bottom:.45rem">sudo dnf install -y nginx
+sudo systemctl enable --now nginx
+sudo tee /etc/nginx/default.d/aws-club-lab.conf &lt;&lt;'EOF'
+location / {
+    gzip off;
+    sub_filter_types text/html;
+    sub_filter '__PRIVATE_IP__' '$server_addr';
+    sub_filter '__HOSTNAME__' '$hostname';
+    sub_filter_once off;
+}
+EOF
+sudo nginx -t && sudo systemctl reload nginx
+curl -s http://localhost | grep ip-10</pre>
+        <p style="font-size:var(--fs-xs);margin-bottom:.25rem"><strong>On laptop</strong> (from <code>materials/</code>):</p>
+        <pre style="font-size:.72rem;margin-bottom:.45rem">scp -i KEY.pem lab-assets/lab-b-ec2/index.html ec2-user@PUBLIC_IP:~/</pre>
+        <p style="font-size:var(--fs-xs);margin-bottom:.25rem"><strong>On EC2:</strong></p>
+        <pre style="font-size:.72rem">sudo cp ~/index.html /usr/share/nginx/html/index.html</pre>
+      </div>
+    </div>
+    <ul class="checklist" style="margin-top:.65rem;font-size:var(--fs-sm)">
+      <li>Browser: <code>http://&lt;public-ip&gt;</code> — page shows this machine's <strong>private IP</strong> and <strong>hostname</strong></li>
+      <li>★ Stretch: <code>aws ec2 describe-instances --instance-ids i-…</code></li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 30 -->
+<section class="slide" data-notes="ec2-user is default on Amazon Linux">
+  <div class="slide-header"><span class="slide-num">32 / 51</span><h2>SSH flow diagram</h2></div>
+  <div class="slide-body">
+    <div class="col diagram-box">
+      <svg viewBox="0 0 340 90" width="100%">
+        <rect x="5" y="30" width="55" height="35" rx="4" fill="#527FFF"/><text x="32" y="52" text-anchor="middle" fill="#fff" font-size="12">Laptop</text>
+        <text x="80" y="50" font-size="12">Internet</text>
+        <rect x="120" y="30" width="55" height="35" rx="4" fill="#FF9900"/><text x="147" y="52" text-anchor="middle" fill="#232F3E" font-size="12">SG:22</text>
+        <rect x="200" y="25" width="130" height="45" rx="4" fill="#232F3E"/><text x="265" y="45" text-anchor="middle" fill="#fff" font-size="12">EC2</text><text x="265" y="60" text-anchor="middle" fill="#aaa" font-size="12">ec2-user</text>
+        <line x1="60" y1="47" x2="120" y2="47" stroke="#333" stroke-width="1.5"/><line x1="175" y1="47" x2="200" y2="47" stroke="#333" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="col">
+      <ul>
+        <li>User <code>ec2-user</code> on Amazon Linux</li>
+        <li><code>sudo</code> for admin commands</li>
+        <li><code>systemctl</code> manages services (nginx)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 31 -->
+<section class="slide" data-notes="ALB is Elastic Load Balancing — created under EC2 console Load Balancers. It is not an EC2 instance.">
+  <div class="slide-header"><span class="slide-num">33 / 51</span><h2>Application Load Balancer (ALB)</h2></div>
+  <div class="slide-body">
+    <div class="col">
+      <ul>
+        <li>Managed <strong>HTTP/HTTPS</strong> load balancer (ELB service; UI under <strong>EC2 → Load Balancers</strong>)</li>
+        <li><strong>Target group</strong> + <strong>health checks</strong> on <code>/</code></li>
+        <li>Users hit <strong>ALB DNS name</strong>, not EC2 public IPs</li>
+        <li>Lab C: <strong>no stickiness</strong> → refresh shows different backend hostname</li>
+      </ul>
+    </div>
+    <div class="col diagram-box">
+      <svg viewBox="0 0 300 110" width="100%">
+        <rect x="10" y="40" width="50" height="30" rx="4" fill="#527FFF"/><text x="35" y="60" text-anchor="middle" fill="#fff" font-size="12">Users</text>
+        <rect x="100" y="35" width="60" height="40" rx="4" fill="#FF9900"/><text x="130" y="60" text-anchor="middle" fill="#232F3E" font-size="12" font-weight="bold">ALB</text>
+        <rect x="200" y="20" width="80" height="30" rx="4" fill="#1B8700"/><text x="240" y="40" text-anchor="middle" fill="#fff" font-size="12">EC2 #1 ✓</text>
+        <rect x="200" y="60" width="80" height="30" rx="4" fill="#1B8700"/><text x="240" y="80" text-anchor="middle" fill="#fff" font-size="12">EC2 #2 ✓</text>
+        <line x1="60" y1="55" x2="100" y2="55" stroke="#333" stroke-width="2"/><line x1="160" y1="50" x2="200" y2="35" stroke="#333" stroke-width="2"/><line x1="160" y1="60" x2="200" y2="75" stroke="#333" stroke-width="2"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 32 -->
+<section class="slide" data-notes="Same index.html and nginx snippet as Lab B. See lab-assets/lab-c-alb/README.md">
+  <div class="slide-header"><span class="slide-num">34 / 51</span><h2>Lab C — Part 1: second EC2 <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-body single" style="font-size:var(--fs-sm)">
+    <ol style="padding-left:1.15rem;line-height:1.45">
+      <li><strong>Subnet</strong> → create <code>aws-club-&lt;initials&gt;-public-b</code> in a <strong>second AZ</strong>, CIDR <code>10.0.2.0/24</code>, auto-assign public IP; associate with same public route table</li>
+      <li><strong>Launch</strong> <code>aws-club-&lt;initials&gt;-web2</code> — Amazon Linux 2023, <code>t3.micro</code>, new subnet, <strong>same security group</strong> as web1</li>
+      <li><strong>SSH</strong> into web2 (same key, new public IP)</li>
+      <li><strong>nginx</strong> — install, create <code>/etc/nginx/default.d/aws-club-lab.conf</code> (see <code>nginx-lab-snippet.conf</code>), reload</li>
+      <li><strong>Deploy</strong> the <strong>same</strong> <code>lab-assets/lab-b-ec2/index.html</code> → <code>/usr/share/nginx/html/</code></li>
+      <li>Verify <code>http://&lt;web2-public-ip&gt;</code> shows a <strong>different hostname</strong> than web1</li>
+    </ol>
+  </div>
+</section>
+
+<!-- SLIDE 33 -->
+<section class="slide" data-notes="Target group stickiness must stay OFF. ALB needs subnets in at least 2 AZs.">
+  <div class="slide-header"><span class="slide-num">35 / 51</span><h2>Lab C — Part 2: ALB <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-body single" style="font-size:var(--fs-sm)">
+    <ol style="padding-left:1.15rem;line-height:1.45">
+      <li><strong>Target group</strong> — EC2 → Target Groups → Instances, HTTP :80, VPC yours, health <code>/</code>, register <strong>web1 + web2</strong>, <strong>stickiness: Off</strong></li>
+      <li><strong>ALB SG</strong> — HTTP 80 from <code>0.0.0.0/0</code> (can reuse app SG or create <code>aws-club-&lt;initials&gt;-alb-sg</code>)</li>
+      <li><strong>Load balancer</strong> — Application Load Balancer, internet-facing, map <strong>both public subnets</strong>, listener HTTP :80 → your target group</li>
+      <li><strong>Test</strong> — <code>http://&lt;alb-dns-name&gt;/</code>, refresh 5–10× → hostname / private IP <strong>alternates</strong></li>
+      <li>★ <strong>Stretch</strong> — <code>sudo systemctl stop nginx</code> on one instance → target <strong>unhealthy</strong> → only one backend answers</li>
+    </ol>
+    <p style="margin-top:.5rem;font-size:var(--fs-xs);color:#555">Tear-down: delete ALB → target group → terminate instances → VPC resources.</p>
+  </div>
+</section>
+
+<!-- SLIDE 34 -->
+<section class="slide" data-notes="RDS in private subnet in production">
+  <div class="slide-header"><span class="slide-num">36 / 51</span><h2>Amazon RDS</h2></div>
+  <div class="slide-body">
+    <div class="col">
+      <ul>
+        <li>Managed relational DB (MySQL, PostgreSQL, …)</li>
+        <li>AWS handles: backups, patching engine, failover</li>
+        <li>You handle: schema, queries, credentials, SGs</li>
+        <li>Run DB in <strong>private subnet</strong> in real architectures</li>
+      </ul>
+    </div>
+    <div class="col diagram-box">
+      <svg viewBox="0 0 200 100" width="100%">
+        <rect x="10" y="35" width="70" height="35" rx="4" fill="#232F3E"/><text x="45" y="57" text-anchor="middle" fill="#fff" font-size="12">EC2 App</text>
+        <ellipse cx="150" cy="52" rx="40" ry="25" fill="#527FFF"/><text x="150" y="57" text-anchor="middle" fill="#fff" font-size="12">RDS</text>
+        <line x1="80" y1="52" x2="110" y2="52" stroke="#FF9900" stroke-width="2"/><text x="95" y="45" font-size="11">:3306</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 34 -->
+<section class="slide" data-notes="SQS decouples producers from consumers">
+  <div class="slide-header"><span class="slide-num">37 / 51</span><h2>Amazon SQS</h2></div>
+  <div class="slide-body">
+    <div class="col">
+      <ul>
+        <li><strong>Message queue</strong> — decouple producer and consumer</li>
+        <li>Producers send; consumers poll/process</li>
+        <li>Handles traffic spikes without losing requests</li>
+        <li>Pairs with <strong>auto scaling</strong> and <strong>Lambda</strong></li>
+      </ul>
+    </div>
+    <div class="col diagram-box">
+      <svg viewBox="0 0 280 90" width="100%">
+        <rect x="10" y="30" width="60" height="35" rx="4" fill="#232F3E"/><text x="40" y="52" text-anchor="middle" fill="#fff" font-size="12">App</text>
+        <rect x="100" y="25" width="70" height="45" rx="4" fill="#FF9900"/><text x="135" y="52" text-anchor="middle" fill="#232F3E" font-size="12" font-weight="bold">SQS</text>
+        <rect x="200" y="15" width="60" height="30" rx="4" fill="#1B8700"/><text x="230" y="35" text-anchor="middle" fill="#fff" font-size="12">Worker 1</text>
+        <rect x="200" y="55" width="60" height="30" rx="4" fill="#1B8700"/><text x="230" y="75" text-anchor="middle" fill="#fff" font-size="12">Worker 2</text>
+        <line x1="70" y1="47" x2="100" y2="47" stroke="#333" stroke-width="2"/><line x1="170" y1="42" x2="200" y2="30" stroke="#333" stroke-width="2"/><line x1="170" y1="52" x2="200" y2="70" stroke="#333" stroke-width="2"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 35 -->
+<section class="slide" data-notes="Full three-tier architecture recap">
+  <div class="slide-header"><span class="slide-num">38 / 51</span><h2>Three-tier app — putting it together</h2></div>
+  <div class="slide-body">
+    <div class="col diagram-box">
+      <svg viewBox="0 0 400 200" width="100%">
+        <rect x="160" y="5" width="80" height="28" rx="4" fill="#527FFF"/><text x="200" y="23" text-anchor="middle" fill="#fff" font-size="12">Users</text>
+        <rect x="160" y="45" width="80" height="28" rx="4" fill="#FF9900"/><text x="200" y="63" text-anchor="middle" fill="#232F3E" font-size="12" font-weight="bold">ALB</text>
+        <rect x="80" y="90" width="70" height="28" rx="4" fill="#232F3E"/><text x="115" y="108" text-anchor="middle" fill="#fff" font-size="12">EC2</text>
+        <rect x="250" y="90" width="70" height="28" rx="4" fill="#232F3E"/><text x="285" y="108" text-anchor="middle" fill="#fff" font-size="12">EC2</text>
+        <ellipse cx="200" cy="155" rx="45" ry="22" fill="#527FFF"/><text x="200" y="160" text-anchor="middle" fill="#fff" font-size="12">RDS</text>
+        <rect x="330" y="90" width="55" height="28" rx="4" fill="#FF9900"/><text x="357" y="108" text-anchor="middle" fill="#232F3E" font-size="12">SQS</text>
+        <line x1="200" y1="33" x2="200" y2="45" stroke="#333" stroke-width="1.5"/><line x1="200" y1="73" x2="115" y2="90" stroke="#333" stroke-width="1.5"/><line x1="200" y1="73" x2="285" y2="90" stroke="#333" stroke-width="1.5"/>
+        <line x1="115" y1="118" x2="170" y2="140" stroke="#333" stroke-width="1.5"/><line x1="285" y1="118" x2="230" y2="140" stroke="#333" stroke-width="1.5"/>
+        <line x1="285" y1="104" x2="330" y2="104" stroke="#FF9900" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="col">
+      <ul>
+        <li>Web tier: EC2 behind ALB</li>
+        <li>Data tier: RDS</li>
+        <li>Async work: SQS</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 36 -->
+<section class="slide" data-notes="Skip EKS in intro session">
+  <div class="slide-header"><span class="slide-num">39 / 51</span><h2>Containers teaser</h2></div>
+  <div class="slide-body single">
+    <ul>
+      <li><strong>Image</strong> = template; <strong>container</strong> = running instance</li>
+      <li><code>docker run</code> locally → same idea on <strong>ECS Fargate</strong></li>
+      <li>We skip <strong>EKS</strong> (Kubernetes) in intro session</li>
+    </ul>
+    <div class="diagram-box" style="margin-top:.75rem;min-height:140px">
+      <svg viewBox="0 0 300 60" width="100%">
+        <rect x="20" y="15" width="80" height="35" rx="2" fill="#232F3E" stroke="#FF9900" stroke-width="2"/><text x="60" y="38" text-anchor="middle" fill="#FF9900" font-size="11">📦 Image</text>
+        <text x="130" y="38" font-size="12">→</text>
+        <rect x="160" y="15" width="120" height="35" rx="2" fill="#527FFF"/><text x="220" y="38" text-anchor="middle" fill="#fff" font-size="11">ECS Fargate</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 37 -->
+<section class="slide" data-notes="GitHub Actions popular with students">
+  <div class="slide-header"><span class="slide-num">40 / 51</span><h2>CI/CD teaser</h2></div>
+  <div class="slide-body">
+    <div class="col diagram-box">
+      <svg viewBox="0 0 380 70" width="100%">
+        <rect x="5" y="20" width="50" height="30" rx="4" fill="#232F3E"/><text x="30" y="40" text-anchor="middle" fill="#fff" font-size="11">Dev</text>
+        <rect x="70" y="20" width="50" height="30" rx="4" fill="#527FFF"/><text x="95" y="40" text-anchor="middle" fill="#fff" font-size="11">Git Push</text>
+        <rect x="135" y="20" width="60" height="30" rx="4" fill="#FF9900"/><text x="165" y="40" text-anchor="middle" fill="#232F3E" font-size="11" font-weight="bold">Pipeline</text>
+        <rect x="210" y="20" width="50" height="30" rx="4" fill="#1B8700"/><text x="235" y="40" text-anchor="middle" fill="#fff" font-size="11">Build</text>
+        <rect x="275" y="20" width="50" height="30" rx="4" fill="#1B8700"/><text x="300" y="40" text-anchor="middle" fill="#fff" font-size="11">Deploy</text>
+        <rect x="340" y="20" width="35" height="30" rx="4" fill="#232F3E"/><text x="357" y="40" text-anchor="middle" fill="#FF9900" font-size="11">AWS</text>
+        <line x1="55" y1="35" x2="70" y2="35" stroke="#333" stroke-width="1.5"/><line x1="120" y1="35" x2="135" y2="35" stroke="#333" stroke-width="1.5"/><line x1="195" y1="35" x2="210" y2="35" stroke="#333" stroke-width="1.5"/><line x1="260" y1="35" x2="275" y2="35" stroke="#333" stroke-width="1.5"/><line x1="325" y1="35" x2="340" y2="35" stroke="#333" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="col">
+      <ul>
+        <li>Commit → automated build → test → deploy to AWS</li>
+        <li>Tools: GitHub Actions, CodePipeline, GitLab CI</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 38 -->
+<section class="slide" data-notes="Deep Terraform comes in a later session">
+  <div class="slide-header"><span class="slide-num">41 / 51</span><h2>Infrastructure as Code (IaC) teaser</h2></div>
+  <div class="slide-body single">
+    <ul>
+      <li>Define resources in <strong>Terraform</strong> or <strong>CloudFormation</strong></li>
+      <li>Version in Git, review in PRs, reproducible environments</li>
+      <li>Survey gap: today is <strong>why</strong>; deep HCL comes later</li>
+    </ul>
+    <pre style="margin-top:.75rem">Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket</pre>
+  </div>
+</section>
+
+<!-- SLIDE 39 -->
+<section class="slide" data-notes="Certs + projects + labs = employability">
+  <div class="slide-header"><span class="slide-num">42 / 51</span><h2>AWS certifications &amp; career paths</h2></div>
+  <div class="slide-body">
+    <div class="col">
+      <ul>
+        <li><strong>Cloud Practitioner</strong> — breadth, good first cert</li>
+        <li><strong>Solutions Architect Associate</strong> — design systems</li>
+        <li><strong>Developer Associate</strong> — app + AWS APIs</li>
+        <li>Roles: Cloud Engineer, DevOps, Platform, SRE</li>
+      </ul>
+    </div>
+    <div class="col diagram-box">
+      <svg viewBox="0 0 260 100" width="100%">
+        <rect x="80" y="35" width="100" height="30" rx="4" fill="#FF9900"/><text x="130" y="55" text-anchor="middle" fill="#232F3E" font-size="12" font-weight="bold">CLF</text>
+        <rect x="20" y="5" width="90" height="25" rx="4" fill="#527FFF"/><text x="65" y="22" text-anchor="middle" fill="#fff" font-size="12">SAA</text>
+        <rect x="150" y="5" width="90" height="25" rx="4" fill="#1B8700"/><text x="195" y="22" text-anchor="middle" fill="#fff" font-size="12">DVA</text>
+        <line x1="110" y1="35" x2="65" y2="30" stroke="#FF9900" stroke-width="2"/><line x1="150" y1="35" x2="195" y2="30" stroke="#FF9900" stroke-width="2"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 40 -->
+<section class="slide" data-notes="Homework optional but encouraged">
+  <div class="slide-header"><span class="slide-num">43 / 51</span><h2>What to do after today</h2></div>
+  <div class="slide-body single">
+    <ul>
+      <li>Tear down EC2 (mandatory)</li>
+      <li>AWS Skill Builder free digital courses</li>
+      <li>Club: cert study group, next lab (Lambda or IaC intro)</li>
+      <li>Homework: push lab notes to Git + architecture sketch</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 41 -->
+<section class="slide" data-notes="Cleanup is part of the lab grade/culture">
+  <div class="slide-header"><span class="slide-num">44 / 51</span><h2>Tear-down checklist</h2></div>
+  <div class="slide-body single">
+    <ul class="checklist">
+      <li>EC2 → Load Balancers → delete <strong>ALB</strong></li>
+      <li>EC2 → Target Groups → delete target group</li>
+      <li>EC2 → Instances → <strong>Terminate</strong> web1 &amp; web2</li>
+      <li>VPC → detach/delete IGW, subnets, route tables, then VPC</li>
+      <li>Release Elastic IPs if allocated</li>
+      <li>S3: empty bucket → delete (if policy allows)</li>
+      <li>Confirm budget alarm email</li>
+    </ul>
+    <div class="warn-box" style="margin-top:1rem">
+      <svg width="32" height="32" viewBox="0 0 32 32"><rect x="8" y="6" width="16" height="20" rx="2" fill="none" stroke="#D13212" stroke-width="2"/><line x1="12" y1="12" x2="20" y2="20" stroke="#D13212" stroke-width="2"/><line x1="20" y1="12" x2="12" y2="20" stroke="#D13212" stroke-width="2"/></svg>
+      <span><strong>Cleanup is part of the lab.</strong> Terminate, don't just Stop.</span>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 42 -->
+<section class="slide" data-notes="Recap the five pillars">
+  <div class="slide-header"><span class="slide-num">45 / 51</span><h2>Key takeaways</h2></div>
+  <div class="slide-body single">
+    <ul style="list-style:none;padding-left:0">
+      <li><span class="takeaway-num">1</span> Cloud = shared responsibility + pay-as-you-go</li>
+      <li><span class="takeaway-num">2</span> <strong>IAM first</strong>, then resources</li>
+      <li><span class="takeaway-num">3</span> <strong>S3</strong> for objects, <strong>EC2</strong> for servers you manage</li>
+      <li><span class="takeaway-num">4</span> <strong>ALB / RDS / SQS</strong> complete a typical web app story</li>
+      <li><span class="takeaway-num">5</span> <strong>Console + CLI</strong> are the same APIs — learn both</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE 43 -->
+<section class="slide qa-slide" data-notes="Leave 5+ min for questions">
+  <h1>Questions?</h1>
+</section>
+
+<!-- SLIDE 44 -->
+<section class="slide" data-notes="Share club contact channels">
+  <div class="slide-header"><span class="slide-num">46 / 51</span><h2>Thank you &amp; stay connected</h2></div>
+  <div class="slide-body single">
+    <ul>
+      <li>Club Discord / WhatsApp / email list</li>
+      <li>Next session topic (vote)</li>
+      <li>Feedback form QR (optional)</li>
+    </ul>
+    <p style="margin-top:1.5rem;font-size:1.2rem;color:var(--aws-orange);font-weight:600">Thank you for a hands-on day of cloud learning! ☁️</p>
+  </div>
+</section>
+
+<!-- SLIDE 45 -->
+<section class="slide" data-notes="Appendix — only if asked">
+  <div class="slide-header"><span class="slide-num">47 / 51</span><h2>Appendix</h2></div>
+  <div class="slide-body single">
+    <ul>
+      <li><code>lab-guide-step-by-step.md</code></li>
+      <li><code>glossary.md</code></li>
+      <li><a href="https://docs.aws.amazon.com" target="_blank">docs.aws.amazon.com</a></li>
+      <li>AWS Architecture Icons download</li>
+      <li>Diagrams: <code>../diagrams/*.excalidraw</code></li>
+    </ul>
+  </div>
+</section>
+
+    </div><!-- #deck -->
+
+    <div id="nav">
+      <button id="prev" aria-label="Previous slide">←</button>
+      <span id="slide-counter">1 / 45</span>
+      <button id="next" aria-label="Next slide">→</button>
+    </div>
+  </main>
+</div><!-- #app -->
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+  let notesVisible = false;
+  let browserItems = [];
+
+  function getSlideTitle(slide, index) {
+    const h2 = slide.querySelector('.slide-header h2');
+    if (h2) return h2.textContent.replace(/\s+/g, ' ').trim();
+    const h1 = slide.querySelector('h1');
+    if (h1) return h1.textContent.replace(/\s+/g, ' ').trim();
+    return `Slide ${index + 1}`;
+  }
+
+  function buildBrowser() {
+    const list = document.getElementById('browser-list');
+    list.innerHTML = '';
+    browserItems = [];
+    document.querySelector('.browser-header span').textContent = `Slides (${total})`;
+
+    slides.forEach((slide, i) => {
+      const title = getSlideTitle(slide, i);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'browser-item';
+      btn.dataset.index = i;
+      if (slide.querySelector('.badge-hands-on')) btn.classList.add('lab');
+      btn.innerHTML = `<span class="bi-num">${i + 1}</span><span class="bi-title">${title}</span>`;
+      btn.title = title;
+      btn.addEventListener('click', () => showSlide(i));
+      list.appendChild(btn);
+      browserItems.push(btn);
+    });
+  }
+
+  function updateBrowser() {
+    browserItems.forEach((btn, i) => {
+      btn.classList.toggle('active', i === current);
+    });
+    const active = browserItems[current];
+    if (active) active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  function showSlide(n) {
+    slides[current].classList.remove('active');
+    current = (n + total) % total;
+    slides[current].classList.add('active');
+    document.getElementById('slide-counter').textContent = `${current + 1} / ${total}`;
+    const stageW = window.innerWidth - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-w'));
+    document.getElementById('progress-bar').style.width = `${((current + 1) / total) * stageW}px`;
+    const notes = slides[current].dataset.notes || '';
+    document.getElementById('speaker-notes').textContent = notes ? '📝 ' + notes : '';
+    updateBrowser();
+  }
+
+  function toggleNotes() {
+    notesVisible = !notesVisible;
+    document.getElementById('speaker-notes').classList.toggle('visible', notesVisible);
+  }
+
+  function toggleBrowser() {
+    document.body.classList.toggle('browser-collapsed');
+    showSlide(current);
+  }
+
+  document.getElementById('prev').addEventListener('click', () => showSlide(current - 1));
+  document.getElementById('next').addEventListener('click', () => showSlide(current + 1));
+  document.getElementById('browser-toggle').addEventListener('click', toggleBrowser);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); showSlide(current + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); showSlide(current - 1); }
+    if (e.key === 'Home') { e.preventDefault(); showSlide(0); }
+    if (e.key === 'End') { e.preventDefault(); showSlide(total - 1); }
+    if (e.key === 'n' || e.key === 'N') toggleNotes();
+    if (e.key === 'b' || e.key === 'B') toggleBrowser();
+    if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+
+  window.addEventListener('resize', () => showSlide(current));
+
+  buildBrowser();
+  showSlide(0);
+</script>
+</body>
+</html>
