@@ -213,7 +213,7 @@ hr.divider {
 <body>
   <header class="page-header">
     <h1>AWS Club — Step-by-Step Lab Guide</h1>
-    <div class="meta"><strong>Workshop duration:</strong> 4 hours<br><strong>Region used in examples:</strong> <code>eu-central-1</code> (Frankfurt) — change if your instructor uses another region.<br><strong>Lab assets:</strong> <code>lab-assets/lab-a-s3/index.html</code>, <code>lab-assets/lab-0-verify-identity/iam-lab-policy.json</code></div>
+    <div class="meta"><strong>Workshop duration:</strong> 4 hours<br><strong>Region used in examples:</strong> <code>eu-central-1</code> (Frankfurt) — change if your instructor uses another region.<br><strong>Lab assets:</strong> <code>lab-assets/lab-a-s3/index.html</code>, <code>lab-assets/lab-0-verify-identity/iam-lab-policy.json</code>, <code>lab-assets/lab-d-sqs/</code></div>
   </header>
   <div class="layout">
     <nav class="toc"><h2>Contents</h2>
@@ -249,13 +249,22 @@ hr.divider {
 <a href="#step-c5-alb-security-group-console" class="">Step C5 — ALB security group (Console)</a>
 <a href="#step-c6-create-application-load-balancer-console" class="">Step C6 — Create Application Load Balan…</a>
 <a href="#step-c7-test-load-balancing" class="">Step C7 — Test load balancing</a>
-<a href="#lab-d-rds-sqs-observe-light-participation" class="lab-d">Lab D — RDS &amp; SQS (observe / light part…</a>
+<a href="#lab-d-amazon-sqs-25-min" class="lab-d">Lab D — Amazon SQS (25 min)</a>
+<a href="#step-d1-create-sqs-queue-console-partner-a" class="">Step D1 — Create SQS queue (Console — P…</a>
+<a href="#step-d2-aws-credentials-on-ec2-both-instances" class="">Step D2 — AWS credentials on EC2 (both …</a>
+<a href="#step-d3-install-boto3-both-instances" class="">Step D3 — Install boto3 (both instances)</a>
+<a href="#step-d4-copy-lab-scripts-from-your-laptop" class="">Step D4 — Copy lab scripts (from your l…</a>
+<a href="#step-d5-run-the-publisher-on-web1" class="">Step D5 — Run the publisher on web1</a>
+<a href="#step-d6-run-the-subscriber-on-web2" class="">Step D6 — Run the subscriber on web2</a>
+<a href="#step-d7-console-check-partner-a" class="">Step D7 — Console check (Partner A)</a>
+<a href="#step-d8-stretch-cli-send-partner-b" class="">Step D8 — ★ Stretch: CLI send (Partner B)</a>
+<a href="#step-d9-stop-apps" class="">Step D9 — Stop apps</a>
 <a href="#tear-down-mandatory-15-min-before-end" class="teardown">Tear-down (mandatory — 15 min before end)</a>
 </nav>
     <main class="content">
       <p><strong>Workshop duration:</strong> 4 hours  </p>
 <p><strong>Region used in examples:</strong> <code>eu-central-1</code> (Frankfurt) — change if your instructor uses another region.  </p>
-<p><strong>Lab assets:</strong> <code>lab-assets/lab-a-s3/index.html</code>, <code>lab-assets/lab-0-verify-identity/iam-lab-policy.json</code></p>
+<p><strong>Lab assets:</strong> <code>lab-assets/lab-a-s3/index.html</code>, <code>lab-assets/lab-0-verify-identity/iam-lab-policy.json</code>, <code>lab-assets/lab-d-sqs/</code></p>
 <hr class="divider">
 <section class="block" id="before-you-start">
 </section>
@@ -636,25 +645,95 @@ ls -l /usr/share/nginx/html/index.html</code></pre>
 <li>** ALB URL alternates hostname on refresh</li>
 </ul>
 <hr class="divider">
-<section class="block" id="lab-d-rds-sqs-observe-light-participation">
+<section class="block" id="lab-d-amazon-sqs-25-min">
 </section>
-<section class="block"><h2 class="section-title lab-d">Lab D — RDS &amp; SQS (observe / light participation)</h2>
-<p class="goal"><strong>Goal:</strong> See managed database and queue — instructor may run these centrally.</p>
-<h3 class="step-title" id="rds-console-tour-students-follow-along">RDS — console tour (students follow along)</h3>
+<section class="block"><h2 class="section-title lab-d">Lab D — Amazon SQS (25 min)</h2>
+<p class="goal"><strong>Goal:</strong> Create a queue, then run a <strong>publisher</strong> on <strong>web1</strong> and a <strong>subscriber</strong> on <strong>web2</strong>. The publisher sends a JSON message every 5 seconds with an incrementing <code>count</code>; the subscriber long-polls the queue and appends each message to a log file.</p>
+<p><strong>Prerequisites:</strong> Lab B (web1) and Lab C (web2) instances running.</p>
+<p><strong>Assets:</strong> <code>lab-assets/lab-d-sqs/publisher.py</code>, <code>lab-assets/lab-d-sqs/subscriber.py</code> (see also <code>lab-assets/lab-d-sqs/README.md</code>).</p>
+<pre><code>web1 (publisher)  ──send──▶  SQS queue  ──poll──▶  web2 (subscriber → sqs-messages.log)</code></pre>
+<hr class="divider">
+<h3 class="step-title" id="step-d1-create-sqs-queue-console-partner-a">Step D1 — Create SQS queue (Console — Partner A)</h3>
+<ol>
+<li>Console search → <strong>SQS</strong> → open <strong>Amazon SQS</strong>.</li>
+<li>Click <strong>Create queue</strong>.</li>
+<li><strong>Type:</strong> Standard</li>
+<li><strong>Name:</strong> <code>aws-club-&lt;initials&gt;-queue</code></li>
+<li>Leave other settings at defaults → <strong>Create queue</strong>.</li>
+<li>Open the queue → copy the <strong>URL</strong> (starts with <code>https://sqs.eu-central-1.amazonaws.com/...</code>).</li>
+</ol>
+<p><strong>Record queue URL:</strong> <code>________________</code></p>
+<p><strong>Expected:</strong> Queue status <strong>Active</strong>, messages available <strong>0</strong>.</p>
+<hr class="divider">
+<h3 class="step-title" id="step-d2-aws-credentials-on-ec2-both-instances">Step D2 — AWS credentials on EC2 (both instances)</h3>
+<p>The Python apps use <strong>boto3</strong>, which reads the same credentials as the AWS CLI.</p>
+<p>On <strong>web1</strong> and <strong>web2</strong> (SSH), run once per instance if not already configured:</p>
+<pre><code>aws configure</code></pre>
+<p>Use the same lab IAM user keys and region <code>eu-central-1</code> as on your laptop.</p>
+<p><strong>Verify on each instance:</strong></p>
+<pre><code>aws sts get-caller-identity
+aws sqs get-queue-attributes --queue-url &quot;YOUR-QUEUE-URL&quot; --attribute-names QueueArn</code></pre>
+<p><strong>Troubleshooting:</strong></p>
+<table><thead><tr><th>Problem</th><th>Fix</th></tr></thead><tbody><tr><td><code>AccessDenied</code> on SQS</td><td>Ask instructor to attach updated lab policy (<code>sqs:<em></code> on <code>aws-club-</em></code> queues)</td></tr><tr><td><code>Unable to locate credentials</code></td><td>Run <code>aws configure</code> on that EC2 instance</td></tr></tbody></table>
+<hr class="divider">
+<h3 class="step-title" id="step-d3-install-boto3-both-instances">Step D3 — Install boto3 (both instances)</h3>
+<p>Amazon Linux 2023:</p>
+<pre><code>sudo dnf install -y python3-boto3
+python3 -c &quot;import boto3; print(boto3.__version__)&quot;</code></pre>
+<hr class="divider">
+<h3 class="step-title" id="step-d4-copy-lab-scripts-from-your-laptop">Step D4 — Copy lab scripts (from your laptop)</h3>
+<p>From the <code>materials</code> folder:</p>
+<pre><code>scp -i ~/.ssh/aws-club-xx-key.pem lab-assets/lab-d-sqs/publisher.py ec2-user@WEB1_PUBLIC_IP:~/
+scp -i ~/.ssh/aws-club-xx-key.pem lab-assets/lab-d-sqs/subscriber.py ec2-user@WEB2_PUBLIC_IP:~/</code></pre>
+<hr class="divider">
+<h3 class="step-title" id="step-d5-run-the-publisher-on-web1">Step D5 — Run the publisher on web1</h3>
+<p>SSH into <strong>web1</strong>:</p>
+<pre><code>export SQS_QUEUE_URL=&quot;https://sqs.eu-central-1.amazonaws.com/ACCOUNT/aws-club-xx-queue&quot;
+chmod +x ~/publisher.py
+python3 ~/publisher.py</code></pre>
+<p><strong>Expected:</strong> Every 5 seconds, a line like <code>Sent #3 MessageId=...</code> with an increasing count.</p>
+<p>Leave this terminal running.</p>
+<hr class="divider">
+<h3 class="step-title" id="step-d6-run-the-subscriber-on-web2">Step D6 — Run the subscriber on web2</h3>
+<p>Open a <strong>second SSH session</strong> to <strong>web2</strong>:</p>
+<pre><code>export SQS_QUEUE_URL=&quot;https://sqs.eu-central-1.amazonaws.com/ACCOUNT/aws-club-xx-queue&quot;
+chmod +x ~/subscriber.py
+python3 ~/subscriber.py</code></pre>
+<p>In another web2 session (or after a few seconds):</p>
+<pre><code>tail -f ~/sqs-messages.log</code></pre>
+<p><strong>Expected:</strong> Log lines with increasing <code>count=</code> values and <code>hostname=ip-10-0-...</code> from web1.</p>
+<p>Example line:</p>
+<pre><code>2026-06-07T14:32:10+00:00 count=4 hostname=ip-10-0-1-42 body={&quot;count&quot;: 4, &quot;hostname&quot;: &quot;ip-10-0-1-42&quot;, ...}</code></pre>
+<hr class="divider">
+<h3 class="step-title" id="step-d7-console-check-partner-a">Step D7 — Console check (Partner A)</h3>
+<ol>
+<li>SQS → your queue → <strong>Monitoring</strong> tab — <strong>Number of messages sent</strong> increases.</li>
+<li><strong>Send and receive messages</strong> → <strong>Poll for messages</strong> — should be empty (subscriber deleted them).</li>
+</ol>
+<hr class="divider">
+<h3 class="step-title" id="step-d8-stretch-cli-send-partner-b">Step D8 — ★ Stretch: CLI send (Partner B)</h3>
+<p>From your laptop:</p>
+<pre><code>aws sqs send-message \
+  --queue-url &quot;YOUR-QUEUE-URL&quot; \
+  --message-body &#x27;{&quot;count&quot;: 999, &quot;message&quot;: &quot;Hello from CLI&quot;}&#x27;</code></pre>
+<p>Watch web2 subscriber print the message and append to the log.</p>
+<hr class="divider">
+<h3 class="step-title" id="step-d9-stop-apps">Step D9 — Stop apps</h3>
+<p>On web1 and web2: <strong>Ctrl+C</strong> in the terminal running the Python script.</p>
+<ul class="checkpoint">
+<li>** Queue created</li>
+<li>** Publisher sends counted messages every 5 s</li>
+<li>** Subscriber log shows increasing counts from web1 hostname</li>
+<li>** Console monitoring shows messages flowing</li>
+</ul>
+<hr class="divider">
+<h3 class="step-title" id="optional-rds-console-tour-5-min-instructor-led">Optional — RDS console tour (5 min, instructor-led)</h3>
+<p>If time allows after Lab D:</p>
 <ol>
 <li>Console → <strong>RDS</strong> → <strong>Databases</strong> → open instructor’s demo DB.</li>
 <li>Note: <strong>Endpoint</strong>, <strong>Engine</strong> (e.g. MySQL), <strong>VPC security group</strong>.</li>
 <li>Discuss: DB in <strong>private subnet</strong>; only app tier (EC2 SG) allowed on port 3306.</li>
 </ol>
-<p><strong>Optional connect (if instructor provides password):</strong></p>
-<pre><code>mysql -h ENDPOINT -u admin -p</code></pre>
-<hr class="divider">
-<h3 class="step-title" id="sqs-send-a-message-cli">SQS — send a message (CLI)</h3>
-<p>Instructor provides <strong>Queue URL</strong>.</p>
-<pre><code>aws sqs send-message \
-  --queue-url &quot;https://sqs.eu-central-1.amazonaws.com/ACCOUNT/aws-club-queue&quot; \
-  --message-body &quot;Hello from AWS Club lab&quot;</code></pre>
-<p><strong>Console:</strong> SQS → queue → <strong>Send and receive messages</strong> → <strong>Poll for messages</strong>.</p>
 <hr class="divider">
 <section class="block" id="tear-down-mandatory-15-min-before-end">
 </section>
@@ -663,6 +742,11 @@ ls -l /usr/share/nginx/html/index.html</code></pre>
 <ol>
 <li>EC2 → <strong>Load Balancers</strong> → select <code>aws-club-alb</code> → <strong>Delete</strong>.</li>
 <li>EC2 → <strong>Target Groups</strong> → select <code>aws-club-http-tg</code> → <strong>Delete</strong>.</li>
+</ol>
+<h3 class="step-title" id="delete-sqs-queue-lab-d">Delete SQS queue (Lab D)</h3>
+<ol>
+<li>SQS → select <code>aws-club-&lt;initials&gt;-queue</code> → <strong>Delete</strong>.</li>
+<li>Confirm by typing <code>delete</code>.</li>
 </ol>
 <h3 class="step-title" id="terminate-ec2">Terminate EC2</h3>
 <ol>
@@ -710,7 +794,9 @@ aws s3 rm s3://bucket/local.txt
 aws ec2 describe-instances --output table
 
 # SQS
-aws sqs send-message --queue-url URL --message-body &quot;test&quot;</code></pre>
+aws sqs send-message --queue-url URL --message-body &quot;test&quot;
+aws sqs receive-message --queue-url URL
+aws sqs delete-queue --queue-url URL</code></pre>
 <hr class="divider">
 <section class="block" id="linux-cheat-sheet-on-ec2">
 </section>
@@ -726,7 +812,7 @@ tail -f /var/log/nginx/access.log</code></pre>
 <section class="block"><h2 class="section-title ">Report problems to instructor</h2>
 <table><thead><tr><th>Symptom</th><th>Info to provide</th></tr></thead><tbody><tr><td>AccessDenied</td><td>Command + screenshot of IAM user</td></tr><tr><td>SSH fail</td><td>Instance ID, public IP, SG inbound rules screenshot</td></tr><tr><td>Website not loading</td><td>Output of <code>curl localhost</code> on server + SG port 80</td></tr></tbody></table>
 <hr class="divider">
-<p><em>Lab guide version 1.0 — AWS Club 4h workshop</em></p></section>
+<p><em>Lab guide version 1.1 — AWS Club 4h workshop (Lab D SQS hands-on)</em></p></section>
     </main>
   </div>
   <p class="footer-note">Lab guide version 1.0 — AWS Club 4h workshop · Generated from lab-guide-step-by-step.md</p>
