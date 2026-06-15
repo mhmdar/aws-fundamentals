@@ -2,7 +2,7 @@
 
 **Workshop duration:** 4 hours  
 **Region used in examples:** `eu-central-1` (Frankfurt) — change if your instructor uses another region.  
-**Lab assets:** `lab-assets/lab-a-s3/index.html`, `lab-assets/lab-0-verify-identity/iam-lab-policy.json`
+**Lab assets:** `lab-assets/lab-a-s3/index.html`, `lab-assets/lab-0-verify-identity/iam-lab-policy.json`, `lab-assets/lab-d-sqs/`
 
 ---
 
@@ -579,35 +579,166 @@ Wait until both targets show **Healthy** (1–2 min).
 
 ---
 
-## Lab D — RDS & SQS (observe / light participation)
+## Lab D — Amazon SQS (25 min)
 
-**Goal:** See managed database and queue — instructor may run these centrally.
+**Goal:** Create a queue, then run a **publisher** on **web1** and a **subscriber** on **web2**. The publisher sends a JSON message every 5 seconds with an incrementing `count`; the subscriber long-polls the queue and appends each message to a log file.
 
-### RDS — console tour (students follow along)
+**Prerequisites:** Lab B (web1) and Lab C (web2) instances running.
 
-1. Console → **RDS** → **Databases** → open instructor’s demo DB.
-2. Note: **Endpoint**, **Engine** (e.g. MySQL), **VPC security group**.
-3. Discuss: DB in **private subnet**; only app tier (EC2 SG) allowed on port 3306.
+**Assets:** `lab-assets/lab-d-sqs/publisher.py`, `lab-assets/lab-d-sqs/subscriber.py` (see also `lab-assets/lab-d-sqs/README.md`).
 
-**Optional connect (if instructor provides password):**
-
-```bash
-mysql -h ENDPOINT -u admin -p
+```
+web1 (publisher)  ──send──▶  SQS queue  ──poll──▶  web2 (subscriber → sqs-messages.log)
 ```
 
 ---
 
-### SQS — send a message (CLI)
+### Step D1 — Create SQS queue (Console — Partner A)
 
-Instructor provides **Queue URL**.
+1. Console search → **SQS** → open **Amazon SQS**.
+2. Click **Create queue**.
+3. **Type:** Standard
+4. **Name:** `aws-club-<initials>-queue`
+5. Leave other settings at defaults → **Create queue**.
+6. Open the queue → copy the **URL** (starts with `https://sqs.eu-central-1.amazonaws.com/...`).
+
+**Record queue URL:** `________________`
+
+**Expected:** Queue status **Active**, messages available **0**.
+
+---
+
+### Step D2 — AWS credentials on EC2 (both instances)
+
+The Python apps use **boto3**, which reads the same credentials as the AWS CLI.
+
+On **web1** and **web2** (SSH), run once per instance if not already configured:
+
+```bash
+aws configure
+```
+
+Use the same lab IAM user keys and region `eu-central-1` as on your laptop.
+
+**Verify on each instance:**
+
+```bash
+aws sts get-caller-identity
+aws sqs get-queue-attributes --queue-url "YOUR-QUEUE-URL" --attribute-names QueueArn
+```
+
+**Troubleshooting:**
+
+| Problem | Fix |
+|---------|-----|
+| `AccessDenied` on SQS | Ask instructor to attach updated lab policy (`sqs:*` on `aws-club-*` queues) |
+| `Unable to locate credentials` | Run `aws configure` on that EC2 instance |
+
+---
+
+### Step D3 — Install boto3 (both instances)
+
+Amazon Linux 2023:
+
+```bash
+sudo dnf install -y python3-boto3
+python3 -c "import boto3; print(boto3.__version__)"
+```
+
+---
+
+### Step D4 — Copy lab scripts (from your laptop)
+
+From the `materials` folder:
+
+```bash
+scp -i ~/.ssh/aws-club-xx-key.pem lab-assets/lab-d-sqs/publisher.py ec2-user@WEB1_PUBLIC_IP:~/
+scp -i ~/.ssh/aws-club-xx-key.pem lab-assets/lab-d-sqs/subscriber.py ec2-user@WEB2_PUBLIC_IP:~/
+```
+
+---
+
+### Step D5 — Run the publisher on web1
+
+SSH into **web1**:
+
+```bash
+export SQS_QUEUE_URL="https://sqs.eu-central-1.amazonaws.com/ACCOUNT/aws-club-xx-queue"
+chmod +x ~/publisher.py
+python3 ~/publisher.py
+```
+
+**Expected:** Every 5 seconds, a line like `Sent #3 MessageId=...` with an increasing count.
+
+Leave this terminal running.
+
+---
+
+### Step D6 — Run the subscriber on web2
+
+Open a **second SSH session** to **web2**:
+
+```bash
+export SQS_QUEUE_URL="https://sqs.eu-central-1.amazonaws.com/ACCOUNT/aws-club-xx-queue"
+chmod +x ~/subscriber.py
+python3 ~/subscriber.py
+```
+
+In another web2 session (or after a few seconds):
+
+```bash
+tail -f ~/sqs-messages.log
+```
+
+**Expected:** Log lines with increasing `count=` values and `hostname=ip-10-0-...` from web1.
+
+Example line:
+
+```
+2026-06-07T14:32:10+00:00 count=4 hostname=ip-10-0-1-42 body={"count": 4, "hostname": "ip-10-0-1-42", ...}
+```
+
+---
+
+### Step D7 — Console check (Partner A)
+
+1. SQS → your queue → **Monitoring** tab — **Number of messages sent** increases.
+2. **Send and receive messages** → **Poll for messages** — should be empty (subscriber deleted them).
+
+---
+
+### Step D8 — ★ Stretch: CLI send (Partner B)
+
+From your laptop:
 
 ```bash
 aws sqs send-message \
-  --queue-url "https://sqs.eu-central-1.amazonaws.com/ACCOUNT/aws-club-queue" \
-  --message-body "Hello from AWS Club lab"
+  --queue-url "YOUR-QUEUE-URL" \
+  --message-body '{"count": 999, "message": "Hello from CLI"}'
 ```
 
-**Console:** SQS → queue → **Send and receive messages** → **Poll for messages**.
+Watch web2 subscriber print the message and append to the log.
+
+---
+
+### Step D9 — Stop apps
+
+On web1 and web2: **Ctrl+C** in the terminal running the Python script.
+
+**Checkpoint ☐** Queue created  
+**Checkpoint ☐** Publisher sends counted messages every 5 s  
+**Checkpoint ☐** Subscriber log shows increasing counts from web1 hostname  
+**Checkpoint ☐** Console monitoring shows messages flowing  
+
+---
+
+### Optional — RDS console tour (5 min, instructor-led)
+
+If time allows after Lab D:
+
+1. Console → **RDS** → **Databases** → open instructor’s demo DB.
+2. Note: **Endpoint**, **Engine** (e.g. MySQL), **VPC security group**.
+3. Discuss: DB in **private subnet**; only app tier (EC2 SG) allowed on port 3306.
 
 ---
 
@@ -617,6 +748,11 @@ aws sqs send-message \
 
 1. EC2 → **Load Balancers** → select `aws-club-alb` → **Delete**.
 2. EC2 → **Target Groups** → select `aws-club-http-tg` → **Delete**.
+
+### Delete SQS queue (Lab D)
+
+1. SQS → select `aws-club-<initials>-queue` → **Delete**.
+2. Confirm by typing `delete`.
 
 ### Terminate EC2
 
@@ -674,6 +810,8 @@ aws ec2 describe-instances --output table
 
 # SQS
 aws sqs send-message --queue-url URL --message-body "test"
+aws sqs receive-message --queue-url URL
+aws sqs delete-queue --queue-url URL
 ```
 
 ---
@@ -700,4 +838,4 @@ tail -f /var/log/nginx/access.log
 
 ---
 
-*Lab guide version 1.0 — AWS Club 4h workshop*
+*Lab guide version 1.1 — AWS Club 4h workshop (Lab D SQS hands-on)*
