@@ -1051,7 +1051,7 @@
 
 <!-- SLIDE 2 -->
 <section class="slide" data-notes="Run hands-up: Linux? AWS Console? Git? Adjust pace accordingly.">
-  <div class="slide-header"><span class="slide-num">01 / 50</span><h2>Who is in the room?</h2></div>
+  <div class="slide-header"><span class="slide-num">01 / 53</span><h2>Who is in the room?</h2></div>
   <div class="slide-body">
     <div class="col">
       <div class="card">
@@ -1089,7 +1089,7 @@
 
 <!-- SLIDE 3 -->
 <section class="slide" data-notes="Set expectation: ~65% doing. Pair work — Console + CLI partners.">
-  <div class="slide-header"><span class="slide-num">02 / 50</span><h2>What you will learn today</h2></div>
+  <div class="slide-header"><span class="slide-num">02 / 53</span><h2>What you will learn today</h2></div>
   <div class="slide-body">
     <div class="col">
       <ul>
@@ -1123,8 +1123,8 @@
 </section>
 
 <!-- SLIDE 4 -->
-<section class="slide" data-notes="Point to breaks. If late, shorten Lab C stretch steps but never skip tear-down.">
-  <div class="slide-header"><span class="slide-num">03 / 50</span><h2>Agenda — 4 hours</h2></div>
+<section class="slide" data-notes="Point to breaks. If late, shorten Lab C stretch or RDS talk but never skip tear-down.">
+  <div class="slide-header"><span class="slide-num">03 / 53</span><h2>Agenda — 4 hours</h2></div>
   <div class="slide-body single">
     <table>
       <tr><th>Time</th><th>Topic</th><th>Mode</th></tr>
@@ -1135,15 +1135,16 @@
       <tr style="background:#fff3e0"><td>1:50</td><td><strong>Lab A: Amazon S3</strong></td><td><strong>Hands-on</strong></td></tr>
       <tr style="background:#fff3e0"><td>2:25</td><td><strong>Lab B: Amazon EC2</strong> (one instance)</td><td><strong>Hands-on</strong></td></tr>
       <tr style="background:#fff3e0"><td>3:05</td><td><strong>Lab C: ALB</strong> (second instance + load balancer)</td><td><strong>Hands-on</strong></td></tr>
-      <tr><td>3:25</td><td>RDS &amp; SQS</td><td>Talk</td></tr>
-      <tr><td>3:45</td><td>Containers, CI/CD, IaC &amp; careers</td><td>Talk + Q&amp;A</td></tr>
+      <tr><td>3:25</td><td>Amazon RDS</td><td>Talk</td></tr>
+      <tr style="background:#fff3e0"><td>3:30</td><td><strong>Lab D: SQS</strong> (publisher on web1, subscriber on web2)</td><td><strong>Hands-on</strong></td></tr>
+      <tr><td>3:50</td><td>Containers, CI/CD, IaC &amp; careers</td><td>Talk + Q&amp;A</td></tr>
     </table>
   </div>
 </section>
 
 <!-- SLIDE 5 -->
 <section class="slide" data-notes="Emphasize real billing. Budget alarm on sandbox account.">
-  <div class="slide-header"><span class="slide-num">04 / 50</span><h2>House rules &amp; safety</h2></div>
+  <div class="slide-header"><span class="slide-num">04 / 53</span><h2>House rules &amp; safety</h2></div>
   <div class="slide-body single">
     <ul>
       <li>Use <strong>lab IAM user</strong> only — never share root keys</li>
@@ -1161,7 +1162,7 @@
 
 <!-- SLIDE 6 -->
 <section class="slide" data-notes="Morning = concepts + identity + storage. Afternoon = compute + traffic + data + messaging.">
-  <div class="slide-header"><span class="slide-num">05 / 50</span><h2>Session architecture — big picture</h2></div>
+  <div class="slide-header"><span class="slide-num">05 / 53</span><h2>Session architecture — big picture</h2></div>
   <div class="slide-body">
     <div class="col diagram-box">
       <svg viewBox="0 0 480 260" width="100%">
@@ -1190,7 +1191,7 @@
 
 <!-- SLIDE 7 -->
 <section class="slide" data-notes="Ask: What do startups prefer, CapEx or OpEx? Answer: OpEx.">
-  <div class="slide-header"><span class="slide-num">06 / 50</span><h2>Why cloud?</h2></div>
+  <div class="slide-header"><span class="slide-num">06 / 53</span><h2>Why cloud?</h2></div>
   <div class="slide-body">
     <div class="col">
       <div class="two-col-grid">
@@ -1211,7 +1212,7 @@
 
 <!-- SLIDE 8 -->
 <section class="slide" data-notes="Memory aid: higher layer = less you manage.">
-  <div class="slide-header"><span class="slide-num">07 / 50</span><h2>Cloud service models</h2></div>
+  <div class="slide-header"><span class="slide-num">07 / 53</span><h2>Cloud service models</h2></div>
   <div class="slide-body">
     <div class="col">
       <table>
@@ -1235,7 +1236,7 @@
 
 <!-- SLIDE 9 -->
 <section class="slide" data-notes="Confirm sandbox region. All students use same region.">
-  <div class="slide-header"><span class="slide-num">08 / 50</span><h2>AWS global infrastructure</h2></div>
+  <div class="slide-header"><span class="slide-num">08 / 53</span><h2>AWS global infrastructure</h2></div>
   <div class="slide-body">
     <div class="col">
       <ul>
@@ -1260,7 +1261,7 @@
 
 <!-- SLIDE 10 -->
 <section class="slide" data-notes="Quick check: Who patches nginx on EC2? Answer: Student/you.">
-  <div class="slide-header"><span class="slide-num">09 / 50</span><h2>Shared responsibility model</h2></div>
+  <div class="slide-header"><span class="slide-num">09 / 53</span><h2>Shared responsibility model</h2></div>
   <div class="slide-body">
     <div class="col diagram-box">
       <svg viewBox="0 0 320 200" width="100%">
@@ -1285,7 +1286,7 @@
 
 <!-- SLIDE 11 -->
 <section class="slide" data-notes="Free tier helps but set budget alarms anyway.">
-  <div class="slide-header"><span class="slide-num">10 / 50</span><h2>Pricing mindset</h2></div>
+  <div class="slide-header"><span class="slide-num">10 / 53</span><h2>Pricing mindset</h2></div>
   <div class="slide-body single">
     <ul>
       <li>Pay for what you use (per second/hour/GB/request)</li>
@@ -1302,7 +1303,7 @@
 
 <!-- SLIDE 12 — Top 10 AWS services (NEW) -->
 <section class="slide" data-notes="Quick orientation before break. Emphasize IAM first — everything in AWS starts with identity. Several of these are covered in today's labs.">
-  <div class="slide-header"><span class="slide-num">11 / 50</span><h2>Top 10 key AWS services</h2></div>
+  <div class="slide-header"><span class="slide-num">11 / 53</span><h2>Top 10 key AWS services</h2></div>
   <div class="slide-body single">
     <p style="font-size:var(--fs-sm);margin-bottom:.6rem;color:#555">Ranked by foundational importance — master these first.</p>
     <div class="aws-top10-grid">
@@ -1368,7 +1369,7 @@
 
 <!-- SLIDE 13 -->
 <section class="slide" data-notes="Reassure Windows users — PowerShell or CloudShell works. Stats are industry estimates (Linux Foundation, W3Techs, CNCF).">
-  <div class="slide-header"><span class="slide-num">12 / 50</span><h2>Linux CLI — why it matters for AWS</h2></div>
+  <div class="slide-header"><span class="slide-num">12 / 53</span><h2>Linux CLI — why it matters for AWS</h2></div>
   <div class="slide-body">
     <div class="col">
       <div class="card" style="margin-bottom:.55rem">
@@ -1442,7 +1443,7 @@
 
 <!-- SLIDE 14 -->
 <section class="slide" data-notes="Live demo 3 min if time; else reference cheat sheet. Orange-highlighted commands are used in today's EC2 lab.">
-  <div class="slide-header"><span class="slide-num">13 / 50</span><h2>Linux CLI cheat sheet</h2></div>
+  <div class="slide-header"><span class="slide-num">13 / 53</span><h2>Linux CLI cheat sheet</h2></div>
   <div class="slide-body single">
     <div class="linux-cheat-grid">
       <div class="cheat-block">
@@ -1563,7 +1564,7 @@
 
 <!-- SLIDE 15 -->
 <section class="slide key-visual-slide" data-notes="Demo ssh -i key.pem ec2-user@IP. Run chmod 400 (Windows: Properties → Security). Show gitignore: *.pem, .aws/credentials. If a key leaks, rotate immediately.">
-  <div class="slide-header"><span class="slide-num">15 / 50</span><h2>File permissions &amp; keys</h2></div>
+  <div class="slide-header"><span class="slide-num">14 / 53</span><h2>File permissions &amp; keys</h2></div>
   <div class="slide-body">
     <div class="key-visual-grid">
       <div class="key-visual-card connect">
@@ -1643,7 +1644,7 @@
 
 <!-- SLIDE 16 -->
 <section class="slide" data-notes="No full Git lab — optional homework. Emphasize: commit locally, push to share, pull before you push, merge via PR.">
-  <div class="slide-header"><span class="slide-num">15 / 50</span><h2>Git in 60 seconds</h2></div>
+  <div class="slide-header"><span class="slide-num">15 / 53</span><h2>Git in 60 seconds</h2></div>
   <div class="slide-body">
     <div class="col">
       <ul>
@@ -1701,7 +1702,7 @@
 
 <!-- SLIDE 17 -->
 <section class="slide" data-notes="DevOps is culture + practices + tools. Walk the 8 lifecycle phases on the diagram — Monitor feeds back to Plan.">
-  <div class="slide-header"><span class="slide-num">16 / 50</span><h2>What is DevOps?</h2></div>
+  <div class="slide-header"><span class="slide-num">16 / 53</span><h2>What is DevOps?</h2></div>
   <div class="slide-body">
     <div class="col">
       <ul>
@@ -1783,7 +1784,7 @@
 
 <!-- SLIDE 18 -->
 <section class="slide" data-notes="Least privilege is the golden rule.">
-  <div class="slide-header"><span class="slide-num">17 / 50</span><h2>IAM: who can do what?</h2></div>
+  <div class="slide-header"><span class="slide-num">17 / 53</span><h2>IAM: who can do what?</h2></div>
   <div class="slide-body">
     <div class="col">
       <ul>
@@ -1808,7 +1809,7 @@
 
 <!-- SLIDE 19 -->
 <section class="slide" data-notes="Point to lab-assets/lab-0-verify-identity/iam-lab-policy.json">
-  <div class="slide-header"><span class="slide-num">18 / 50</span><h2>Policy language — one example</h2></div>
+  <div class="slide-header"><span class="slide-num">18 / 53</span><h2>Policy language — one example</h2></div>
   <div class="slide-body single">
     <pre>{
   "Effect": "Allow",
@@ -1824,7 +1825,7 @@
 
 <!-- SLIDE 20 -->
 <section class="slide" data-notes="CloudShell if no local CLI installed.">
-  <div class="slide-header"><span class="slide-num">19 / 50</span><h2>Console vs AWS CLI</h2></div>
+  <div class="slide-header"><span class="slide-num">19 / 53</span><h2>Console vs AWS CLI</h2></div>
   <div class="slide-body single">
     <table>
       <tr><th></th><th>AWS Console</th><th>AWS CLI</th></tr>
@@ -1838,7 +1839,7 @@
 
 <!-- SLIDE 21 -->
 <section class="slide" data-notes="Lab 0 identity check in lab guide.">
-  <div class="slide-header"><span class="slide-num">20 / 50</span><h2>Install &amp; configure AWS CLI <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-header"><span class="slide-num">20 / 53</span><h2>Install &amp; configure AWS CLI <span class="badge-hands-on">HANDS-ON</span></h2></div>
   <div class="slide-body single">
     <ol>
       <li>Install AWS CLI v2 (Windows MSI / Mac pkg / Linux curl)</li>
@@ -1852,7 +1853,7 @@ aws s3 ls</pre>
 
 <!-- SLIDE 22 -->
 <section class="slide" data-notes="Lab A starts next. Object storage = flat store of files accessed by key, not folders on a disk. Bucket names are globally unique.">
-  <div class="slide-header"><span class="slide-num">21 / 50</span><h2>Amazon S3 — What is it? <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-header"><span class="slide-num">21 / 53</span><h2>Amazon S3 — What is it? <span class="badge-hands-on">HANDS-ON</span></h2></div>
   <div class="slide-body single">
     <div class="s3-hero">
       <img class="s3-hero-icon" src="https://unpkg.com/aws-svg-icons@3.0.0-2021-07-30/lib/Architecture-Service-Icons_07302021/Arch_Storage/64/Arch_Amazon-Simple-Storage-Service_64.svg" alt="Amazon S3" loading="lazy">
@@ -1886,7 +1887,7 @@ aws s3 ls</pre>
 
 <!-- SLIDE 22b — S3 vs local & network storage -->
 <section class="slide" data-notes="Contrast: laptop disk is fast but local; NAS is shared but on-prem; S3 is cloud-native, durable, API-driven.">
-  <div class="slide-header"><span class="slide-num">22 / 50</span><h2>Amazon S3 — vs local &amp; network storage</h2></div>
+  <div class="slide-header"><span class="slide-num">22 / 53</span><h2>Amazon S3 — vs local &amp; network storage</h2></div>
   <div class="slide-body single">
     <table class="storage-compare">
       <tr>
@@ -1938,7 +1939,7 @@ aws s3 ls</pre>
 
 <!-- SLIDE 22c — Key terminology -->
 <section class="slide" data-notes="Students will use bucket, key, and object in Lab A. Region matters for latency and compliance.">
-  <div class="slide-header"><span class="slide-num">23 / 50</span><h2>Amazon S3 — key terminology</h2></div>
+  <div class="slide-header"><span class="slide-num">23 / 53</span><h2>Amazon S3 — key terminology</h2></div>
   <div class="slide-body">
     <div class="col term-grid">
       <div class="term-item"><strong>Bucket</strong><span>Container for objects. Name is <strong>globally unique</strong> across all AWS accounts.</span></div>
@@ -1961,7 +1962,7 @@ aws s3 ls</pre>
 
 <!-- SLIDE 22d — Use cases -->
 <section class="slide" data-notes="Today's lab: static site upload. Mention data lakes and backups as real-world examples.">
-  <div class="slide-header"><span class="slide-num">24 / 50</span><h2>Amazon S3 — common use cases</h2></div>
+  <div class="slide-header"><span class="slide-num">24 / 53</span><h2>Amazon S3 — common use cases</h2></div>
   <div class="slide-body single">
     <div class="usecase-grid">
       <div class="usecase-card">
@@ -1999,7 +2000,7 @@ aws s3 ls</pre>
 
 <!-- SLIDE 23 -->
 <section class="slide" data-notes="Block public access is on by default — good!">
-  <div class="slide-header"><span class="slide-num">25 / 50</span><h2>Amazon S3 — key concepts</h2></div>
+  <div class="slide-header"><span class="slide-num">25 / 53</span><h2>Amazon S3 — key concepts</h2></div>
   <div class="slide-body single">
     <ul>
       <li>Default: <strong>block public access</strong> (good!)</li>
@@ -2012,7 +2013,7 @@ aws s3 ls</pre>
 
 <!-- SLIDE 23b — S3 storage classes -->
 <section class="slide" data-notes="Pick class by access pattern, not gut feel. Lab A uses Standard. Lifecycle policies auto-transition objects. IA and Glacier have retrieval fees and minimum storage duration.">
-  <div class="slide-header"><span class="slide-num">26 / 50</span><h2>Amazon S3 — storage classes</h2></div>
+  <div class="slide-header"><span class="slide-num">26 / 53</span><h2>Amazon S3 — storage classes</h2></div>
   <div class="slide-body">
     <div class="col">
       <p style="margin-bottom:.65rem;font-size:var(--fs-sm)">Same bucket, same API — different <strong>cost vs access speed</strong> trade-offs.</p>
@@ -2065,7 +2066,7 @@ aws s3 ls</pre>
 
 <!-- SLIDE 24 -->
 <section class="slide" data-notes="See lab-guide-step-by-step.md Lab A">
-  <div class="slide-header"><span class="slide-num">27 / 50</span><h2>Lab A — S3 checklist <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-header"><span class="slide-num">27 / 53</span><h2>Lab A — S3 checklist <span class="badge-hands-on">HANDS-ON</span></h2></div>
   <div class="slide-body single">
     <ul class="checklist">
       <li>Create bucket <code>aws-club-&lt;initials&gt;-&lt;date&gt;</code></li>
@@ -2085,7 +2086,7 @@ aws s3 ls</pre>
 
 <!-- SLIDE 26 -->
 <section class="slide" data-notes="EC2 = Elastic Compute Cloud, AWS core IaaS. An instance is one running VM — like renting a computer by the hour. Walk the diagram: Region contains AZs; VPC is your private network with a CIDR block; subnets are IP slices inside one AZ; security groups wrap each instance. Lab B creates a custom VPC + public subnet + t3.micro. t3.micro is free tier eligible.">
-  <div class="slide-header"><span class="slide-num">28 / 50</span><h2>Amazon EC2 — virtual servers &amp; networking</h2></div>
+  <div class="slide-header"><span class="slide-num">28 / 53</span><h2>Amazon EC2 — virtual servers &amp; networking</h2></div>
   <div class="slide-body">
     <div class="col diagram-box">
       <svg viewBox="0 0 520 300" width="100%">
@@ -2171,7 +2172,7 @@ aws s3 ls</pre>
 
 <!-- SLIDE 27 -->
 <section class="slide" data-notes="Never SSH from 0.0.0.0/0 in production">
-  <div class="slide-header"><span class="slide-num">29 / 50</span><h2>Security groups (firewall rules)</h2></div>
+  <div class="slide-header"><span class="slide-num">29 / 53</span><h2>Security groups (firewall rules)</h2></div>
   <div class="slide-body single">
     <table>
       <tr><th>Port</th><th>Protocol</th><th>Source</th><th>Purpose</th></tr>
@@ -2187,7 +2188,7 @@ aws s3 ls</pre>
 
 <!-- SLIDE 28 -->
 <section class="slide" data-notes="Walk VPC wizard or manual steps. Students name resources with aws-club-initials. Asset: lab-assets/lab-b-ec2/index.html">
-  <div class="slide-header"><span class="slide-num">30 / 51</span><h2>Lab B — Part 1: VPC &amp; EC2 <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-header"><span class="slide-num">30 / 53</span><h2>Lab B — Part 1: VPC &amp; EC2 <span class="badge-hands-on">HANDS-ON</span></h2></div>
   <div class="slide-body">
     <div class="col diagram-box">
       <svg viewBox="0 0 320 180" width="100%">
@@ -2215,7 +2216,7 @@ aws s3 ls</pre>
 
 <!-- SLIDE 29 -->
 <section class="slide" data-notes="Assets: lab-assets/lab-b-ec2/index.html and nginx-lab-snippet.conf. sub_filter fills IP and hostname per machine — same file works on web2 in Lab C.">
-  <div class="slide-header"><span class="slide-num">31 / 51</span><h2>Lab B — Part 2: SSH &amp; web server <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-header"><span class="slide-num">31 / 53</span><h2>Lab B — Part 2: SSH &amp; web server <span class="badge-hands-on">HANDS-ON</span></h2></div>
   <div class="slide-body single" style="font-size:var(--fs-sm)">
     <div class="two-col-grid" style="gap:.75rem">
       <div>
@@ -2260,7 +2261,7 @@ curl -s http://localhost | grep ip-10</pre>
 
 <!-- SLIDE 30 -->
 <section class="slide" data-notes="ec2-user is default on Amazon Linux">
-  <div class="slide-header"><span class="slide-num">32 / 51</span><h2>SSH flow diagram</h2></div>
+  <div class="slide-header"><span class="slide-num">32 / 53</span><h2>SSH flow diagram</h2></div>
   <div class="slide-body">
     <div class="col diagram-box">
       <svg viewBox="0 0 340 90" width="100%">
@@ -2283,7 +2284,7 @@ curl -s http://localhost | grep ip-10</pre>
 
 <!-- SLIDE 31 -->
 <section class="slide" data-notes="ALB is Elastic Load Balancing — created under EC2 console Load Balancers. It is not an EC2 instance.">
-  <div class="slide-header"><span class="slide-num">33 / 51</span><h2>Application Load Balancer (ALB)</h2></div>
+  <div class="slide-header"><span class="slide-num">33 / 53</span><h2>Application Load Balancer (ALB)</h2></div>
   <div class="slide-body">
     <div class="col">
       <ul>
@@ -2307,7 +2308,7 @@ curl -s http://localhost | grep ip-10</pre>
 
 <!-- SLIDE 32 -->
 <section class="slide" data-notes="Same index.html and nginx snippet as Lab B. See lab-assets/lab-c-alb/README.md">
-  <div class="slide-header"><span class="slide-num">34 / 51</span><h2>Lab C — Part 1: second EC2 <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-header"><span class="slide-num">34 / 53</span><h2>Lab C — Part 1: second EC2 <span class="badge-hands-on">HANDS-ON</span></h2></div>
   <div class="slide-body single" style="font-size:var(--fs-sm)">
     <ol style="padding-left:1.15rem;line-height:1.45">
       <li><strong>Subnet</strong> → create <code>aws-club-&lt;initials&gt;-public-b</code> in a <strong>second AZ</strong>, CIDR <code>10.0.2.0/24</code>, auto-assign public IP; associate with same public route table</li>
@@ -2322,7 +2323,7 @@ curl -s http://localhost | grep ip-10</pre>
 
 <!-- SLIDE 33 -->
 <section class="slide" data-notes="Target group stickiness must stay OFF. ALB needs subnets in at least 2 AZs.">
-  <div class="slide-header"><span class="slide-num">35 / 51</span><h2>Lab C — Part 2: ALB <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-header"><span class="slide-num">35 / 53</span><h2>Lab C — Part 2: ALB <span class="badge-hands-on">HANDS-ON</span></h2></div>
   <div class="slide-body single" style="font-size:var(--fs-sm)">
     <ol style="padding-left:1.15rem;line-height:1.45">
       <li><strong>Target group</strong> — EC2 → Target Groups → Instances, HTTP :80, VPC yours, health <code>/</code>, register <strong>web1 + web2</strong>, <strong>stickiness: Off</strong></li>
@@ -2337,7 +2338,7 @@ curl -s http://localhost | grep ip-10</pre>
 
 <!-- SLIDE 34 -->
 <section class="slide" data-notes="RDS in private subnet in production">
-  <div class="slide-header"><span class="slide-num">36 / 51</span><h2>Amazon RDS</h2></div>
+  <div class="slide-header"><span class="slide-num">36 / 53</span><h2>Amazon RDS</h2></div>
   <div class="slide-body">
     <div class="col">
       <ul>
@@ -2359,7 +2360,7 @@ curl -s http://localhost | grep ip-10</pre>
 
 <!-- SLIDE 34 -->
 <section class="slide" data-notes="SQS decouples producers from consumers">
-  <div class="slide-header"><span class="slide-num">37 / 51</span><h2>Amazon SQS</h2></div>
+  <div class="slide-header"><span class="slide-num">37 / 53</span><h2>Amazon SQS</h2></div>
   <div class="slide-body">
     <div class="col">
       <ul>
@@ -2381,9 +2382,46 @@ curl -s http://localhost | grep ip-10</pre>
   </div>
 </section>
 
+<!-- SLIDE — Lab D part 1 -->
+<section class="slide" data-notes="Assets: lab-assets/lab-d-sqs/publisher.py and subscriber.py. Queue name aws-club-initials-queue. EC2 needs aws configure or instance profile.">
+  <div class="slide-header"><span class="slide-num">38 / 53</span><h2>Lab D — Part 1: create queue &amp; prepare EC2 <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-body single" style="font-size:var(--fs-sm)">
+    <ol style="padding-left:1.15rem;line-height:1.45">
+      <li><strong>SQS</strong> → Create queue → Standard → <code>aws-club-&lt;initials&gt;-queue</code> → copy <strong>Queue URL</strong></li>
+      <li>On <strong>web1</strong> and <strong>web2</strong>: <code>aws configure</code> (lab IAM user) → verify <code>aws sts get-caller-identity</code></li>
+      <li>Install SDK: <code>sudo dnf install -y python3-boto3</code></li>
+      <li><strong>scp</strong> from laptop: <code>publisher.py</code> → web1, <code>subscriber.py</code> → web2 (<code>lab-assets/lab-d-sqs/</code>)</li>
+      <li>Both instances: <code>export SQS_QUEUE_URL='https://sqs...'</code></li>
+    </ol>
+  </div>
+</section>
+
+<!-- SLIDE — Lab D part 2 -->
+<section class="slide" data-notes="Publisher sends JSON every 5s with incrementing count. Subscriber long-polls, logs to ~/sqs-messages.log, deletes messages.">
+  <div class="slide-header"><span class="slide-num">39 / 53</span><h2>Lab D — Part 2: publisher &amp; subscriber <span class="badge-hands-on">HANDS-ON</span></h2></div>
+  <div class="slide-body single" style="font-size:var(--fs-sm)">
+    <ol style="padding-left:1.15rem;line-height:1.45">
+      <li><strong>web1</strong> (SSH): <code>python3 ~/publisher.py</code> → <code>Sent #1</code>, <code>Sent #2</code>, … every 5 s</li>
+      <li><strong>web2</strong> (SSH): <code>python3 ~/subscriber.py</code> → prints received messages</li>
+      <li><strong>web2</strong>: <code>tail -f ~/sqs-messages.log</code> → increasing <code>count=</code> from web1 hostname</li>
+      <li>Console → queue <strong>Monitoring</strong> → messages sent/received</li>
+      <li>★ <strong>Stretch</strong> — laptop: <code>aws sqs send-message</code> → appears in web2 log</li>
+      <li>Stop with <strong>Ctrl+C</strong>; tear-down: delete queue</li>
+    </ol>
+    <div class="diagram-box" style="margin-top:.5rem;padding:.5rem">
+      <svg viewBox="0 0 420 70" width="100%">
+        <rect x="10" y="20" width="70" height="32" rx="4" fill="#232F3E"/><text x="45" y="40" text-anchor="middle" fill="#fff" font-size="11">web1 pub</text>
+        <rect x="160" y="15" width="80" height="42" rx="4" fill="#FF9900"/><text x="200" y="40" text-anchor="middle" fill="#232F3E" font-size="11" font-weight="bold">SQS</text>
+        <rect x="320" y="20" width="90" height="32" rx="4" fill="#1B8700"/><text x="365" y="40" text-anchor="middle" fill="#fff" font-size="11">web2 sub → log</text>
+        <line x1="80" y1="36" x2="160" y2="36" stroke="#333" stroke-width="2"/><line x1="240" y1="36" x2="320" y2="36" stroke="#333" stroke-width="2"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
 <!-- SLIDE 35 -->
 <section class="slide" data-notes="Full three-tier architecture recap">
-  <div class="slide-header"><span class="slide-num">38 / 51</span><h2>Three-tier app — putting it together</h2></div>
+  <div class="slide-header"><span class="slide-num">40 / 53</span><h2>Three-tier app — putting it together</h2></div>
   <div class="slide-body">
     <div class="col diagram-box">
       <svg viewBox="0 0 400 200" width="100%">
@@ -2410,7 +2448,7 @@ curl -s http://localhost | grep ip-10</pre>
 
 <!-- SLIDE 36 -->
 <section class="slide" data-notes="Skip EKS in intro session">
-  <div class="slide-header"><span class="slide-num">39 / 51</span><h2>Containers teaser</h2></div>
+  <div class="slide-header"><span class="slide-num">41 / 53</span><h2>Containers teaser</h2></div>
   <div class="slide-body single">
     <ul>
       <li><strong>Image</strong> = template; <strong>container</strong> = running instance</li>
@@ -2429,7 +2467,7 @@ curl -s http://localhost | grep ip-10</pre>
 
 <!-- SLIDE 37 -->
 <section class="slide" data-notes="GitHub Actions popular with students">
-  <div class="slide-header"><span class="slide-num">40 / 51</span><h2>CI/CD teaser</h2></div>
+  <div class="slide-header"><span class="slide-num">42 / 53</span><h2>CI/CD teaser</h2></div>
   <div class="slide-body">
     <div class="col diagram-box">
       <svg viewBox="0 0 380 70" width="100%">
@@ -2453,7 +2491,7 @@ curl -s http://localhost | grep ip-10</pre>
 
 <!-- SLIDE 38 -->
 <section class="slide" data-notes="Deep Terraform comes in a later session">
-  <div class="slide-header"><span class="slide-num">41 / 51</span><h2>Infrastructure as Code (IaC) teaser</h2></div>
+  <div class="slide-header"><span class="slide-num">43 / 53</span><h2>Infrastructure as Code (IaC) teaser</h2></div>
   <div class="slide-body single">
     <ul>
       <li>Define resources in <strong>Terraform</strong> or <strong>CloudFormation</strong></li>
@@ -2468,7 +2506,7 @@ curl -s http://localhost | grep ip-10</pre>
 
 <!-- SLIDE 39 -->
 <section class="slide" data-notes="Certs + projects + labs = employability">
-  <div class="slide-header"><span class="slide-num">42 / 51</span><h2>AWS certifications &amp; career paths</h2></div>
+  <div class="slide-header"><span class="slide-num">44 / 53</span><h2>AWS certifications &amp; career paths</h2></div>
   <div class="slide-body">
     <div class="col">
       <ul>
@@ -2491,7 +2529,7 @@ curl -s http://localhost | grep ip-10</pre>
 
 <!-- SLIDE 40 -->
 <section class="slide" data-notes="Homework optional but encouraged">
-  <div class="slide-header"><span class="slide-num">43 / 51</span><h2>What to do after today</h2></div>
+  <div class="slide-header"><span class="slide-num">45 / 53</span><h2>What to do after today</h2></div>
   <div class="slide-body single">
     <ul>
       <li>Tear down EC2 (mandatory)</li>
@@ -2504,9 +2542,10 @@ curl -s http://localhost | grep ip-10</pre>
 
 <!-- SLIDE 41 -->
 <section class="slide" data-notes="Cleanup is part of the lab grade/culture">
-  <div class="slide-header"><span class="slide-num">44 / 51</span><h2>Tear-down checklist</h2></div>
+  <div class="slide-header"><span class="slide-num">46 / 53</span><h2>Tear-down checklist</h2></div>
   <div class="slide-body single">
     <ul class="checklist">
+      <li>SQS → delete <strong>queue</strong> (Lab D)</li>
       <li>EC2 → Load Balancers → delete <strong>ALB</strong></li>
       <li>EC2 → Target Groups → delete target group</li>
       <li>EC2 → Instances → <strong>Terminate</strong> web1 &amp; web2</li>
@@ -2524,13 +2563,13 @@ curl -s http://localhost | grep ip-10</pre>
 
 <!-- SLIDE 42 -->
 <section class="slide" data-notes="Recap the five pillars">
-  <div class="slide-header"><span class="slide-num">45 / 51</span><h2>Key takeaways</h2></div>
+  <div class="slide-header"><span class="slide-num">47 / 53</span><h2>Key takeaways</h2></div>
   <div class="slide-body single">
     <ul style="list-style:none;padding-left:0">
       <li><span class="takeaway-num">1</span> Cloud = shared responsibility + pay-as-you-go</li>
       <li><span class="takeaway-num">2</span> <strong>IAM first</strong>, then resources</li>
       <li><span class="takeaway-num">3</span> <strong>S3</strong> for objects, <strong>EC2</strong> for servers you manage</li>
-      <li><span class="takeaway-num">4</span> <strong>ALB / RDS / SQS</strong> complete a typical web app story</li>
+      <li><span class="takeaway-num">4</span> <strong>ALB / RDS / SQS</strong> complete a typical web app — you ran SQS on two EC2s in Lab D</li>
       <li><span class="takeaway-num">5</span> <strong>Console + CLI</strong> are the same APIs — learn both</li>
     </ul>
   </div>
@@ -2543,7 +2582,7 @@ curl -s http://localhost | grep ip-10</pre>
 
 <!-- SLIDE 44 -->
 <section class="slide" data-notes="Share club contact channels">
-  <div class="slide-header"><span class="slide-num">46 / 51</span><h2>Thank you &amp; stay connected</h2></div>
+  <div class="slide-header"><span class="slide-num">48 / 53</span><h2>Thank you &amp; stay connected</h2></div>
   <div class="slide-body single">
     <ul>
       <li>Club Discord / WhatsApp / email list</li>
@@ -2556,7 +2595,7 @@ curl -s http://localhost | grep ip-10</pre>
 
 <!-- SLIDE 45 -->
 <section class="slide" data-notes="Appendix — only if asked">
-  <div class="slide-header"><span class="slide-num">47 / 51</span><h2>Appendix</h2></div>
+  <div class="slide-header"><span class="slide-num">49 / 53</span><h2>Appendix</h2></div>
   <div class="slide-body single">
     <ul>
       <li><code>lab-guide-step-by-step.md</code></li>
